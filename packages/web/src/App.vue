@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhPencilSimple, PhPlus, PhTrash, PhX } from '@phosphor-icons/vue';
 import { computed, ref } from 'vue';
 import BalanceChart from './charts/BalanceChart.vue';
 import EquityGauge from './charts/EquityGauge.vue';
@@ -6,6 +7,7 @@ import AmortizationTable from './components/AmortizationTable.vue';
 import CsvImportDialog from './components/CsvImportDialog.vue';
 import FilePicker from './components/FilePicker.vue';
 import LoanEditForm from './components/LoanEditForm.vue';
+import ScenarioEditor from './components/ScenarioEditor.vue';
 import ValuationRefresh from './components/ValuationRefresh.vue';
 import { useLoanStore } from './stores/loan.js';
 
@@ -22,6 +24,23 @@ const fmtCents = (n: number): string =>
 
 const fmtPercent = (n: number): string => `${(n * 100).toFixed(3)}%`;
 
+function fmtInterestDelta(n: number): string {
+  if (n === 0) return 'no interest change';
+  const abs = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency.value,
+    maximumFractionDigits: 0,
+  }).format(Math.abs(n));
+  return n > 0 ? `−${abs} interest` : `+${abs} interest`;
+}
+
+function fmtMonthsDelta(n: number): string {
+  if (n === 0) return 'same payoff date';
+  const abs = Math.abs(n);
+  const unit = abs === 1 ? 'month' : 'months';
+  return n > 0 ? `${abs} ${unit} earlier` : `${abs} ${unit} later`;
+}
+
 const currentRateDisplay = computed(() => {
   const madeRows = store.computation.ledger.filter((r) => r.actual);
   const last = madeRows[madeRows.length - 1];
@@ -29,13 +48,31 @@ const currentRateDisplay = computed(() => {
 });
 
 const sourceLabel = computed(() => {
-  if (store.source === 'demo') return 'Demo data';
-  if (store.source === 'fsa') return `${store.fileName} · will save in place`;
-  return `${store.fileName} · saves as download`;
+  if (store.source === 'demo') return 'Demo loan';
+  return store.fileName;
 });
 
 async function onSave() {
   await store.save();
+}
+
+function addScenario() {
+  const id = `scenario-${Date.now().toString(36)}`;
+  store.updateLoan((l) => {
+    const list = (l.scenarios ??= []);
+    list.push({ id, name: `Scenario ${list.length + 1}`, mutations: [] });
+  });
+  store.activeScenarioId = id;
+  store.editingScenarioId = id;
+}
+
+function removeScenario(id: string) {
+  store.updateLoan((l) => {
+    if (!l.scenarios) return;
+    l.scenarios = l.scenarios.filter((s) => s.id !== id);
+  });
+  if (store.activeScenarioId === id) store.activeScenarioId = null;
+  if (store.editingScenarioId === id) store.editingScenarioId = null;
 }
 </script>
 
@@ -45,10 +82,7 @@ async function onSave() {
       <div class="title-block">
         <p class="eyebrow">Loan Ledger</p>
         <h1>{{ store.activeLoan.property.name }}</h1>
-        <p class="source caption">
-          {{ sourceLabel
-          }}<span v-if="store.hasUnsavedChanges" class="dirty">· unsaved changes</span>
-        </p>
+        <p class="source caption">{{ sourceLabel }}</p>
       </div>
       <div class="controls">
         <FilePicker />
@@ -56,14 +90,14 @@ async function onSave() {
           Edit loan
         </button>
         <button v-if="!store.isEditing" class="secondary" type="button" @click="importOpen = true">
-          Import CSV
+          Import payments
         </button>
         <template v-else>
           <button class="primary" type="button" @click="store.commitEditing">Done editing</button>
           <button class="tertiary" type="button" @click="store.cancelEditing">Cancel</button>
         </template>
         <button
-          v-if="store.hasUnsavedChanges && store.canWriteToFile && !store.isEditing"
+          v-if="store.canWriteToFile && !store.isEditing"
           class="primary"
           type="button"
           :disabled="store.saveState === 'saving'"
@@ -72,7 +106,7 @@ async function onSave() {
           Save to file
         </button>
         <button v-if="!store.isEditing" class="secondary" type="button" @click="store.downloadYaml">
-          Download YAML
+          Save loan
         </button>
       </div>
     </header>
@@ -144,6 +178,7 @@ async function onSave() {
             </p>
           </div>
           <div
+            v-if="store.activeLoan.loan.escrow_monthly > 0"
             title="Portion of each monthly payment collected by the lender to cover property taxes and insurance."
           >
             <p class="label">Monthly escrow</p>
@@ -158,6 +193,16 @@ async function onSave() {
               }}
             </p>
           </div>
+          <div
+            v-if="store.interestSavedByExtras > 0"
+            title="Interest you didn't pay because your actual payments reduced the balance faster than the lender's scheduled path. (scheduled interest − actual interest, to date)"
+          >
+            <p class="label">Interest saved so far</p>
+            <p class="supporting positive">
+              {{ fmtCents(store.interestSavedByExtras) }}
+            </p>
+            <p class="caption">vs. the lender's scheduled path</p>
+          </div>
         </div>
       </section>
 
@@ -171,46 +216,102 @@ async function onSave() {
           />
         </div>
         <aside class="scenarios">
-          <p class="label">Scenarios</p>
+          <div class="scenarios-header">
+            <p class="label">Scenarios</p>
+            <button
+              type="button"
+              class="icon-btn"
+              title="Add scenario"
+              aria-label="Add scenario"
+              @click="addScenario"
+            >
+              <PhPlus :size="16" weight="regular" />
+            </button>
+          </div>
+
           <ul v-if="(store.activeLoan.scenarios ?? []).length">
             <li
               v-for="scenario in store.activeLoan.scenarios ?? []"
               :key="scenario.id"
-              :class="{ active: store.activeScenarioId === scenario.id }"
+              :class="{
+                active: store.activeScenarioId === scenario.id,
+                editing: store.editingScenarioId === scenario.id,
+              }"
             >
-              <button
-                type="button"
+              <div
                 class="scenario-card"
                 :aria-pressed="store.activeScenarioId === scenario.id"
+                role="button"
+                :tabindex="0"
                 @click="store.toggleScenario(scenario.id)"
+                @keyup.enter="store.toggleScenario(scenario.id)"
               >
-                <p class="scenario-name">{{ scenario.name }}</p>
-                <dl v-if="store.scenarios.get(scenario.id)" class="delta">
+                <div class="scenario-top">
+                  <p class="scenario-name">{{ scenario.name }}</p>
                   <div
+                    v-if="
+                      store.activeScenarioId === scenario.id ||
+                      store.editingScenarioId === scenario.id
+                    "
+                    class="actions"
+                  >
+                    <button
+                      type="button"
+                      class="icon-btn"
+                      :title="
+                        store.editingScenarioId === scenario.id ? 'Close editor' : 'Edit scenario'
+                      "
+                      :aria-label="
+                        store.editingScenarioId === scenario.id ? 'Close editor' : 'Edit scenario'
+                      "
+                      @click.stop="store.toggleEditingScenario(scenario.id)"
+                    >
+                      <PhX
+                        v-if="store.editingScenarioId === scenario.id"
+                        :size="15"
+                        weight="regular"
+                      />
+                      <PhPencilSimple v-else :size="15" weight="regular" />
+                    </button>
+                    <button
+                      type="button"
+                      class="icon-btn danger"
+                      title="Delete scenario"
+                      aria-label="Delete scenario"
+                      @click.stop="removeScenario(scenario.id)"
+                    >
+                      <PhTrash :size="15" weight="regular" />
+                    </button>
+                  </div>
+                </div>
+                <p v-if="scenario.description" class="scenario-desc">{{ scenario.description }}</p>
+                <ul v-if="store.scenarios.get(scenario.id)" class="delta">
+                  <li
                     :class="{
                       positive: store.scenarios.get(scenario.id)!.delta.interest_saved > 0,
                       negative: store.scenarios.get(scenario.id)!.delta.interest_saved < 0,
                     }"
                   >
-                    <dt>Interest</dt>
-                    <dd>
-                      {{ fmtCents(store.scenarios.get(scenario.id)!.delta.interest_saved) }}
-                    </dd>
-                  </div>
-                  <div
+                    {{ fmtInterestDelta(store.scenarios.get(scenario.id)!.delta.interest_saved) }}
+                  </li>
+                  <li
                     :class="{
                       positive: store.scenarios.get(scenario.id)!.delta.months_sooner > 0,
                       negative: store.scenarios.get(scenario.id)!.delta.months_sooner < 0,
                     }"
                   >
-                    <dt>Sooner</dt>
-                    <dd>{{ store.scenarios.get(scenario.id)!.delta.months_sooner }} mo</dd>
-                  </div>
-                </dl>
-              </button>
+                    {{ fmtMonthsDelta(store.scenarios.get(scenario.id)!.delta.months_sooner) }}
+                  </li>
+                </ul>
+
+                <ScenarioEditor
+                  v-if="store.editingScenarioId === scenario.id"
+                  :scenario-id="scenario.id"
+                />
+              </div>
             </li>
           </ul>
-          <p v-else class="readout empty"><em>No scenarios yet.</em></p>
+          <p v-else class="readout empty"><em>No scenarios yet. Click + to add one.</em></p>
         </aside>
       </section>
 
@@ -258,11 +359,6 @@ h1 {
 
 .source {
   margin-top: 0.125rem;
-}
-
-.dirty {
-  color: var(--ll-mark);
-  margin-left: 0.5rem;
 }
 
 .controls {
@@ -363,6 +459,10 @@ button {
   line-height: 1.2;
 }
 
+.supporting.positive {
+  color: var(--ll-positive);
+}
+
 .caption {
   font-size: 0.75rem;
   color: var(--ll-ink-muted);
@@ -409,7 +509,7 @@ button {
 
 .mid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 1.5rem;
   min-height: 0;
   flex: none;
@@ -441,6 +541,36 @@ button {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+}
+
+.scenarios-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--ll-ink-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.icon-btn:hover {
+  color: var(--ll-accent);
+  background: var(--ll-accent-soft);
+}
+
+.icon-btn.danger:hover {
+  color: var(--ll-negative);
+  background: var(--ll-negative-soft);
 }
 
 .scenarios ul {
@@ -478,6 +608,19 @@ button {
   border-left-color: var(--ll-mark);
 }
 
+.scenario-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.125rem;
+  flex-shrink: 0;
+}
+
 .scenario-name {
   font-family: var(--ll-font-serif);
   font-size: 1rem;
@@ -487,38 +630,29 @@ button {
 }
 
 .delta {
-  margin: 0;
-  display: grid;
+  margin: 0.375rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
   gap: 0.125rem;
 }
 
-.delta div {
-  display: flex;
-  justify-content: space-between;
+.delta li {
   font-size: 0.8125rem;
-}
-
-.delta dt {
-  color: var(--ll-ink-muted);
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.delta dd {
-  margin: 0;
   font-weight: 500;
+  color: var(--ll-ink-soft);
   font-feature-settings:
     'tnum' 1,
     'lnum' 1;
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-.delta .positive dd {
+.delta .positive {
   color: var(--ll-positive);
 }
 
-.delta .negative dd {
+.delta .negative {
   color: var(--ll-negative);
 }
 

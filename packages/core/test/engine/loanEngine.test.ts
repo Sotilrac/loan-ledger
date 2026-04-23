@@ -147,6 +147,59 @@ describe('computeLoan — no escrow, zero-rate edge case', () => {
   });
 });
 
+describe('computeLoan — scheduled extras', () => {
+  const withExtras: LoanFile = {
+    ...FIXED_RATE_12_MONTHS,
+    loan: {
+      ...FIXED_RATE_12_MONTHS.loan,
+      scheduled_extras: [{ start_date: '2026-02-01', amount: 500 }],
+    },
+  };
+
+  const baseline = computeLoan(FIXED_RATE_12_MONTHS, { today: '2026-02-02' });
+  const accelerated = computeLoan(withExtras, { today: '2026-02-02' });
+
+  it('marks each future scheduled row with the committed extra', () => {
+    expect(accelerated.ledger[0]!.scheduled.extra).toBe(500);
+    expect(baseline.ledger[0]!.scheduled.extra).toBe(0);
+  });
+
+  it('reduces the scheduled balance and pays off earlier', () => {
+    expect(accelerated.summary.current_scheduled_balance).toBeLessThan(
+      baseline.summary.current_scheduled_balance,
+    );
+    expect(accelerated.ledger.length).toBeLessThan(baseline.ledger.length);
+  });
+
+  it('respects the end_date if set', () => {
+    const bounded: LoanFile = {
+      ...FIXED_RATE_12_MONTHS,
+      loan: {
+        ...FIXED_RATE_12_MONTHS.loan,
+        scheduled_extras: [{ start_date: '2026-02-01', end_date: '2026-04-01', amount: 500 }],
+      },
+    };
+    const out = computeLoan(bounded, { today: '2026-06-01' });
+    expect(out.ledger[0]!.scheduled.extra).toBe(500);
+    expect(out.ledger[2]!.scheduled.extra).toBe(500);
+    expect(out.ledger[3]!.scheduled.extra).toBe(0);
+  });
+
+  it('clamps the extra so the balance never goes negative', () => {
+    const huge: LoanFile = {
+      ...FIXED_RATE_12_MONTHS,
+      loan: {
+        ...FIXED_RATE_12_MONTHS.loan,
+        scheduled_extras: [{ start_date: '2026-02-01', amount: 20_000 }],
+      },
+    };
+    const out = computeLoan(huge, { today: '2026-02-02' });
+    const last = out.ledger[out.ledger.length - 1]!;
+    expect(last.scheduled.balance_after).toBe(0);
+    expect(last.scheduled.balance_after).toBeGreaterThanOrEqual(0);
+  });
+});
+
 describe('computeLoan — actual payment with explicit breakdown', () => {
   const loan: LoanFile = {
     ...FIXED_RATE_12_MONTHS,

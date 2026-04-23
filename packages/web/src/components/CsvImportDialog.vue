@@ -79,7 +79,8 @@ async function onFilePicked(event: Event) {
   // Pull header row for column dropdowns
   const firstLine = rawCsv.value.split(/\r?\n/).find((l) => l.trim().length > 0) ?? '';
   detectedHeaders.value = firstLine.split(/[,;\t]/).map((h) => h.trim().replace(/^"|"$/g, ''));
-  input.value = '';
+  // Intentionally keep `input.value` so the native file-input label still
+  // shows the picked filename after onChange fires.
 }
 
 function applyMappingFromSaved(name: string) {
@@ -158,7 +159,7 @@ const fmt = (n: number): string =>
     <form method="dialog" @submit.prevent="apply">
       <header>
         <p class="eyebrow">Import</p>
-        <h2>CSV import</h2>
+        <h2>Import payments</h2>
         <p class="readout">
           <em>Map the columns of your bank's export to the payment fields.</em>
         </p>
@@ -202,6 +203,8 @@ const fmt = (n: number): string =>
               <option value="MM/DD/YYYY">MM/DD/YYYY</option>
               <option value="DD/MM/YYYY">DD/MM/YYYY</option>
               <option value="YYYY/MM/DD">YYYY/MM/DD</option>
+              <option value="MM/DD/YY">MM/DD/YY</option>
+              <option value="DD/MM/YY">DD/MM/YY</option>
             </select>
           </div>
           <div class="field">
@@ -216,6 +219,37 @@ const fmt = (n: number): string =>
             <select id="amount-sign" v-model="amountSign">
               <option value="negative">Negative (typical bank debit)</option>
               <option value="positive">Positive</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="principal-col">Principal column</label>
+            <select id="principal-col" v-model="principalColumn">
+              <option value="">—</option>
+              <option v-for="h in detectedHeaders" :key="`p-${h}`" :value="h">{{ h }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="interest-col">Interest column</label>
+            <select id="interest-col" v-model="interestColumn">
+              <option value="">—</option>
+              <option v-for="h in detectedHeaders" :key="`i-${h}`" :value="h">{{ h }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="escrow-col">Escrow column</label>
+            <select id="escrow-col" v-model="escrowColumn">
+              <option value="">—</option>
+              <option v-for="h in detectedHeaders" :key="`e-${h}`" :value="h">{{ h }}</option>
+            </select>
+          </div>
+          <div
+            class="field"
+            title="Map this column when the row represents extra principal above the scheduled payment."
+          >
+            <label for="extra-col">Extra column</label>
+            <select id="extra-col" v-model="extraColumn">
+              <option value="">—</option>
+              <option v-for="h in detectedHeaders" :key="`x-${h}`" :value="h">{{ h }}</option>
             </select>
           </div>
           <div class="field">
@@ -242,8 +276,9 @@ const fmt = (n: number): string =>
       <section v-if="previewPayments.length > 0" class="step">
         <p class="label">3. Preview</p>
         <p class="caption">
-          {{ previewPayments.length }} payments will be imported. Existing payments on the same date
-          get replaced.
+          {{ previewPayments.length }} payments will be imported. Multiple rows on the same date
+          (within this CSV or across multiple imports) are summed, not replaced — so you can run
+          separate passes for regular payments and extra-principal payments.
         </p>
         <table class="preview">
           <thead>

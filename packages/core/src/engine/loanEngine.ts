@@ -37,6 +37,9 @@ function buildLedger(loan: LoanFile): LedgerRow[] {
   const override = loan.loan.monthly_payment;
   const scheduledExtras = loan.loan.scheduled_extras ?? [];
   const actualsByDate = indexPaymentsByDate(loan.payments ?? []);
+  const latestActualDate = (loan.payments ?? [])
+    .map((p) => p.date)
+    .reduce((a, b) => (a > b ? a : b), '');
   const sortedRateSchedule = [...rate_schedule].sort((a, b) =>
     compareDates(a.effective_date, b.effective_date),
   );
@@ -96,7 +99,10 @@ function buildLedger(loan: LoanFile): LedgerRow[] {
 
     rows.push(row);
 
-    if (scheduledBalance <= 0 && actualBalance <= 0) break;
+    // Stop when the scheduled balance has paid off AND we've rendered every
+    // historical actual. Without the actual-date gate, committed extras that
+    // zero the schedule early would also chop off real payment history.
+    if (scheduledBalance <= 0 && dateString >= latestActualDate) break;
   }
 
   return rows;
@@ -175,31 +181,25 @@ function applyActualPayment(
   scheduledEscrow: number,
 ): ActualPart {
   const amount = ROUND(Math.abs(payment.amount));
+  const abs = (n: number): number => ROUND(Math.abs(n));
 
-  let interest: number;
-  let principal: number;
-  let escrow: number;
-  let extra: number;
+  // Respect every explicit field independently. Anything missing is inferred
+  // from the total amount minus the parts we already know.
+  const explicitInterest = payment.interest !== undefined;
+  const explicitEscrow = payment.escrow !== undefined;
+  const explicitExtra = payment.extra !== undefined;
+  const explicitPrincipal = payment.principal !== undefined;
 
-  if (
-    payment.principal !== undefined &&
-    payment.interest !== undefined &&
-    payment.escrow !== undefined
-  ) {
-    principal = ROUND(Math.abs(payment.principal));
-    interest = ROUND(Math.abs(payment.interest));
-    escrow = ROUND(Math.abs(payment.escrow));
-    extra = payment.extra !== undefined ? ROUND(Math.abs(payment.extra)) : 0;
-  } else {
-    interest = ROUND(balance * monthlyRate);
-    escrow = scheduledEscrow;
-    const principalAndExtra = ROUND(amount - interest - escrow);
-    extra = payment.extra !== undefined ? ROUND(Math.abs(payment.extra)) : 0;
-    principal = ROUND(principalAndExtra - extra);
-    if (principal < 0) {
-      principal = 0;
-      extra = Math.max(0, principalAndExtra);
-    }
+  const interest = explicitInterest ? abs(payment.interest!) : ROUND(balance * monthlyRate);
+  const escrow = explicitEscrow ? abs(payment.escrow!) : scheduledEscrow;
+  let extra = explicitExtra ? abs(payment.extra!) : 0;
+  let principal = explicitPrincipal
+    ? abs(payment.principal!)
+    : ROUND(amount - interest - escrow - extra);
+
+  if (principal < 0) {
+    principal = 0;
+    if (!explicitExtra) extra = ROUND(Math.max(0, amount - interest - escrow));
   }
 
   const principalTotal = ROUND(principal + extra);

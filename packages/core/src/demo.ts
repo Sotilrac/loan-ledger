@@ -42,7 +42,6 @@ export function buildDemoLoan(): LoanFile {
       {
         id: 'extra-500',
         name: 'Add $500/mo in 2026',
-        description: 'What paying an extra $500/month starting May 2026 looks like.',
         mutations: [
           {
             type: 'recurring_extra_principal',

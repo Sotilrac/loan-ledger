@@ -517,7 +517,7 @@ const d = computed(() => store.draft);
                 "
               />
             </td>
-            <td>
+            <td class="end-date-cell">
               <input
                 type="date"
                 :value="entry.end_date ?? ''"
@@ -525,6 +525,20 @@ const d = computed(() => store.draft);
                   updateExtraEntry(index, 'end_date', ($event.target as HTMLInputElement).value)
                 "
               />
+              <label class="forever">
+                <input
+                  type="checkbox"
+                  :checked="entry.end_date === undefined"
+                  @change="
+                    updateExtraEntry(
+                      index,
+                      'end_date',
+                      ($event.target as HTMLInputElement).checked ? '' : d.loan.first_payment_date,
+                    )
+                  "
+                />
+                Until loan end
+              </label>
             </td>
             <td class="num">
               <input
@@ -555,8 +569,8 @@ const d = computed(() => store.draft);
     </fieldset>
 
     <p class="note">
-      Payments are edited via CSV import (Phase 6). Derived values (equity, projected payoff,
-      schedule rows) update live as you type.
+      Scenarios are edited directly in the Scenarios sidebar. Payments are edited via Import
+      payments. Derived values (equity, projected payoff, schedule rows) update live as you type.
     </p>
   </form>
 </template>
@@ -677,6 +691,26 @@ select:focus {
   color: var(--ll-ink-muted);
   font-size: 0.875rem;
   padding-left: 0.25rem;
+}
+
+.end-date-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.forever {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--ll-ink-muted);
+  cursor: pointer;
+}
+
+.forever input[type='checkbox'] {
+  width: auto;
+  margin: 0;
 }
 
 button.add {

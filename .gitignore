@@ -10,6 +10,9 @@ coverage/
 .eslintcache
 .stylelintcache
 
+# Personal loan files at the repo root (test fixtures under packages/ are still tracked)
+/*.loan.yaml
+
 # Editors
 .idea/
 .vscode/*

@@ -31,13 +31,16 @@ const points = computed(() => {
   }));
 });
 
-const domainX: [number, number] = [0, Math.max(1, props.computation.ledger.length - 1)];
+const domainX = computed<[number, number]>(() => [
+  0,
+  Math.max(1, props.computation.ledger.length - 1),
+]);
 const domainY = computed<[number, number]>(() => {
   const max = props.computation.ledger[0]?.scheduled.balance_after ?? 0;
   return [0, max * 1.02];
 });
 
-const x = computed(() => linearScale(domainX, [0, plotW]));
+const x = computed(() => linearScale(domainX.value, [0, plotW]));
 const y = computed(() => linearScale(domainY.value, [plotH, 0]));
 
 const yTicks = computed(() => niceTicks(domainY.value[0], domainY.value[1], 4));
@@ -81,6 +84,63 @@ function pathFor(
 const scheduledPath = computed(() => pathFor((p) => p.scheduled, today.value));
 const actualPath = computed(() => pathFor((p) => p.actual, today.value));
 
+/**
+ * "Continue as you are" projection: start from the current actual balance and
+ * amortize forward using the contractual P+I (no future extras). Shown
+ * dashed-Marigold so the user can compare it with the contractual scheduled
+ * (Ink Blue) line and see the head-start their past extras have given them.
+ */
+const currentStatePath = computed<string>(() => {
+  const rows = props.computation.ledger;
+  if (!rows.length) return '';
+  const startIdx = rows.findIndex((r) => r.date > today.value);
+  if (startIdx < 0) return ''; // loan already paid off / all past
+  const prevIdx = Math.max(0, startIdx - 1);
+  const lastActualBalance =
+    rows[prevIdx]?.actual?.balance_after ?? rows[prevIdx]?.scheduled.balance_after ?? 0;
+
+  const coords: { x: number; y: number }[] = [
+    { x: x.value(prevIdx), y: y.value(lastActualBalance) },
+  ];
+  let bal = lastActualBalance;
+  for (let i = startIdx; i < rows.length; i += 1) {
+    const row = rows[i]!;
+    const monthlyRate = row.rate / 12;
+    const interest = Math.round(bal * monthlyRate * 100) / 100;
+    const principal = Math.max(0, row.scheduled.payment - interest);
+    bal = Math.max(0, bal - principal);
+    coords.push({ x: x.value(i), y: y.value(bal) });
+    if (bal <= 0) break;
+  }
+  return coords.map((c, i) => (i === 0 ? `M${c.x},${c.y}` : `L${c.x},${c.y}`)).join(' ');
+});
+
+/**
+ * Alternating-year background bands. Every other year gets a subtle
+ * paper-sunk tint so the eye can count decades without grid lines.
+ */
+const yearBands = computed(() => {
+  const rows = props.computation.ledger;
+  const bands: { x0: number; x1: number; year: number; shaded: boolean }[] = [];
+  if (!rows.length) return bands;
+  let yearStart = 0;
+  let currentYear = Number(rows[0]!.date.slice(0, 4));
+  for (let i = 1; i <= rows.length; i += 1) {
+    const year = i < rows.length ? Number(rows[i]!.date.slice(0, 4)) : currentYear + 1;
+    if (year !== currentYear) {
+      bands.push({
+        x0: x.value(yearStart),
+        x1: x.value(i - 1) + (x.value(1) - x.value(0)) / 2,
+        year: currentYear,
+        shaded: currentYear % 2 === 0,
+      });
+      currentYear = year;
+      yearStart = i;
+    }
+  }
+  return bands;
+});
+
 const todayX = computed(() => {
   const idx = props.computation.ledger.findIndex((r) => r.date > today.value);
   const ledgerX = idx >= 0 ? idx - 0.5 : props.computation.ledger.length;
@@ -117,7 +177,8 @@ function onMove(event: MouseEvent) {
     store.setSelectedPeriod(null);
     return;
   }
-  const domX = (relX / plotW) * (domainX[1] - domainX[0]) + domainX[0];
+  const [dMin, dMax] = domainX.value;
+  const domX = (relX / plotW) * (dMax - dMin) + dMin;
   const idx = Math.round(domX);
   const clamped = Math.max(0, Math.min(points.value.length - 1, idx));
   store.setSelectedPeriod(clamped + 1);
@@ -139,6 +200,21 @@ function onLeave() {
       @mouseleave="onLeave"
     >
       <g :transform="`translate(${chartMargin.left}, ${chartMargin.top})`">
+        <!-- Alternating year bands: subtle paper-sunk tint behind even years -->
+        <g class="year-bands">
+          <rect
+            v-for="band in yearBands"
+            v-show="band.shaded"
+            :key="band.year"
+            :x="band.x0"
+            :y="0"
+            :width="Math.max(0, band.x1 - band.x0)"
+            :height="plotH"
+            fill="var(--ll-paper-sunk)"
+            fill-opacity="0.55"
+          />
+        </g>
+
         <!-- Y-axis ticks (text only, no grid lines per style guide) -->
         <g class="axis">
           <text
@@ -213,6 +289,15 @@ function onLeave() {
           :stroke="chartPalette.actual.stroke"
           :stroke-opacity="chartPalette.actual.opacity"
           :stroke-width="chartPalette.actual.width"
+        />
+        <!-- Current-state projection: dashed Marigold forward from today -->
+        <path
+          :d="currentStatePath"
+          fill="none"
+          :stroke="chartPalette.actual.stroke"
+          stroke-opacity="0.85"
+          :stroke-width="chartPalette.actual.width"
+          :stroke-dasharray="chartPalette.projection.dash"
         />
 
         <!-- Scenario overlays -->

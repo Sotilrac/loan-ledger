@@ -36,9 +36,9 @@ async function onFileChosen(event: Event) {
 <template>
   <div class="picker">
     <button v-if="store.fsaAvailable" type="button" class="primary" @click="openViaFSA">
-      Open a .loan.yaml
+      Load loan
     </button>
-    <button v-else type="button" class="primary" @click="openFallback">Choose a .loan.yaml</button>
+    <button v-else type="button" class="primary" @click="openFallback">Load loan</button>
     <button type="button" class="tertiary" @click="store.loadDemo">Use demo data</button>
     <input
       ref="fileInput"

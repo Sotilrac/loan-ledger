@@ -44,6 +44,9 @@ export const useLoanStore = defineStore('loan', () => {
   // --- Active scenario (for the chart overlay + card highlight) ------------
   const activeScenarioId = ref<string | null>(null);
 
+  /** Which scenario is open in inline-edit mode in the sidebar (null = none). */
+  const editingScenarioId = ref<string | null>(null);
+
   // --- Computed -------------------------------------------------------------
   const today = ref(todayISO());
 
@@ -65,6 +68,17 @@ export const useLoanStore = defineStore('loan', () => {
     const ev = scenarios.value.get(activeScenarioId.value);
     if (!ev) return new Map();
     return new Map([[activeScenarioId.value, ev]]);
+  });
+
+  /**
+   * Interest saved *so far* by paying above scheduled. Simply the gap between
+   * what the contract would have charged over the months you've actually
+   * paid, vs. what actually accrued on your accelerated balance path.
+   */
+  const interestSavedByExtras = computed<number>(() => {
+    const s = computation.value.summary;
+    const diff = s.scheduled_interest_to_date - s.actual_interest_to_date;
+    return Math.max(0, Math.round(diff * 100) / 100);
   });
 
   const currentYaml = computed<string>(() => serializeLoanYaml(activeLoan.value));
@@ -167,19 +181,62 @@ export const useLoanStore = defineStore('loan', () => {
     activeScenarioId.value = activeScenarioId.value === id ? null : id;
   }
 
+  function toggleEditingScenario(id: string): void {
+    editingScenarioId.value = editingScenarioId.value === id ? null : id;
+  }
+
   /**
-   * Merge imported payments into the current loan. Payments on the same date
-   * as an existing one are replaced (the import wins) — simplest-correct
-   * behaviour for re-importing the same month's statement.
+   * Mutate the current committed loan directly (not through the edit draft).
+   * Used for inline edits (scenarios, quick changes) that shouldn't require
+   * entering global Edit mode.
+   */
+  function updateLoan(mutator: (l: LoanFile) => void): void {
+    const next = structuredClone(loan.value);
+    mutator(next);
+    loan.value = next;
+  }
+
+  /**
+   * Merge imported payments into the current loan. Multiple rows on the same
+   * date — both within a single CSV (a regular payment + a principal-only
+   * row) and across imports (two filtered passes from the same bank export) —
+   * are *summed*, not replaced: amounts add, principal/interest/escrow/extra
+   * fields add, notes concatenate.
    */
   function importPayments(imported: Payment[]): number {
     if (imported.length === 0) return 0;
     const byDate = new Map<string, Payment>();
-    for (const p of loan.value.payments ?? []) byDate.set(p.date, p);
-    for (const p of imported) byDate.set(p.date, p);
+    for (const p of loan.value.payments ?? []) byDate.set(p.date, { ...p });
+    for (const p of imported) {
+      const existing = byDate.get(p.date);
+      byDate.set(p.date, existing ? mergePayments(existing, p) : { ...p });
+    }
     const merged = Array.from(byDate.values()).sort((a, b) => (a.date < b.date ? -1 : 1));
     loan.value = { ...loan.value, payments: merged };
     return imported.length;
+  }
+
+  function mergePayments(a: Payment, b: Payment): Payment {
+    const round2 = (n: number): number => Math.round(n * 100) / 100;
+    const sum = (x: number | undefined, y: number | undefined): number | undefined => {
+      if (x === undefined && y === undefined) return undefined;
+      return round2((x ?? 0) + (y ?? 0));
+    };
+    const notes = [a.note, b.note].filter((n): n is string => !!n);
+    const merged: Payment = {
+      date: a.date,
+      amount: round2(a.amount + b.amount),
+    };
+    const principal = sum(a.principal, b.principal);
+    if (principal !== undefined) merged.principal = principal;
+    const interest = sum(a.interest, b.interest);
+    if (interest !== undefined) merged.interest = interest;
+    const escrow = sum(a.escrow, b.escrow);
+    if (escrow !== undefined) merged.escrow = escrow;
+    const extra = sum(a.extra, b.extra);
+    if (extra !== undefined) merged.extra = extra;
+    if (notes.length > 0) merged.note = notes.join(' · ');
+    return merged;
   }
 
   /**
@@ -206,6 +263,7 @@ export const useLoanStore = defineStore('loan', () => {
     draft,
     selectedPeriod,
     activeScenarioId,
+    editingScenarioId,
     saveState,
     saveError,
     today,
@@ -214,6 +272,7 @@ export const useLoanStore = defineStore('loan', () => {
     computation,
     scenarios,
     activeScenarios,
+    interestSavedByExtras,
     currentYaml,
     hasUnsavedChanges,
     canWriteToFile,
@@ -230,6 +289,8 @@ export const useLoanStore = defineStore('loan', () => {
     downloadYaml,
     setSelectedPeriod,
     toggleScenario,
+    toggleEditingScenario,
+    updateLoan,
     importPayments,
   };
 });

@@ -169,9 +169,17 @@ function parseDate(raw: string, format: string): DateString | null {
     if (format === 'YYYY/MM/DD') return assemble(a, b, c);
     if (format === 'MM/DD/YYYY') return assemble(c, a, b);
     if (format === 'DD/MM/YYYY') return assemble(c, b, a);
+    if (format === 'MM/DD/YY') return assemble(expandTwoDigitYear(c), a, b);
+    if (format === 'DD/MM/YY') return assemble(expandTwoDigitYear(c), b, a);
   }
 
   return null;
+}
+
+/** Map a 2-digit year to 20xx (the convention for modern loan apps). */
+function expandTwoDigitYear(y: string): string {
+  if (/^\d{2}$/.test(y)) return `20${y}`;
+  return y;
 }
 
 function assemble(y: string, m: string, d: string): DateString | null {
