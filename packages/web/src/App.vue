@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import BalanceChart from './charts/BalanceChart.vue';
-import CompositionChart from './charts/CompositionChart.vue';
 import EquityGauge from './charts/EquityGauge.vue';
 import AmortizationTable from './components/AmortizationTable.vue';
 import CsvImportDialog from './components/CsvImportDialog.vue';
@@ -9,7 +8,6 @@ import FilePicker from './components/FilePicker.vue';
 import LoanEditForm from './components/LoanEditForm.vue';
 import ValuationRefresh from './components/ValuationRefresh.vue';
 import { useLoanStore } from './stores/loan.js';
-import { ref } from 'vue';
 
 const store = useLoanStore();
 const importOpen = ref(false);
@@ -42,9 +40,9 @@ async function onSave() {
 </script>
 
 <template>
-  <main>
+  <main class="app">
     <header class="site-header">
-      <div>
+      <div class="title-block">
         <p class="eyebrow">Loan Ledger</p>
         <h1>{{ store.activeLoan.property.name }}</h1>
         <p class="source caption">
@@ -91,132 +89,154 @@ async function onSave() {
       <p>Save failed: {{ store.saveError }}</p>
     </div>
 
-    <LoanEditForm v-if="store.isEditing" />
+    <div v-if="store.isEditing" class="editing-overlay">
+      <LoanEditForm />
+    </div>
 
-    <section class="summary">
-      <div class="summary-gauge">
-        <EquityGauge
-          :equity="store.computation.summary.equity ?? 0"
-          :property-value="store.activeLoan.valuation.current.amount"
-          :currency="currency"
-        />
-      </div>
-      <div class="summary-facts">
-        <div>
-          <p class="label">Current balance</p>
-          <p class="supporting">
-            {{ fmtCents(store.computation.summary.current_actual_balance) }}
-          </p>
-          <p class="caption">
-            Scheduled would be
-            {{ fmtCents(store.computation.summary.current_scheduled_balance) }}
-          </p>
+    <template v-else>
+      <section class="summary">
+        <div class="summary-gauge">
+          <EquityGauge
+            :equity="store.computation.summary.equity ?? 0"
+            :property-value="store.activeLoan.valuation.current.amount"
+            :currency="currency"
+          />
         </div>
-        <div>
-          <p class="label">Interest paid</p>
-          <p class="supporting">
-            {{ fmtCents(store.computation.summary.actual_interest_to_date) }}
-          </p>
-          <p class="caption">Over {{ store.computation.summary.payments_made }} payments</p>
-        </div>
-        <div>
-          <p class="label">Current rate</p>
-          <p class="supporting">{{ currentRateDisplay }}</p>
-          <p class="caption">
-            Payoff projected {{ store.computation.summary.projected_payoff_date }}
-          </p>
-        </div>
-        <div>
-          <p class="label">Property value</p>
-          <p class="supporting">
-            {{ fmtCents(store.activeLoan.valuation.current.amount) }}
-          </p>
-          <p class="caption">As of {{ store.activeLoan.valuation.current.as_of }}</p>
-          <ValuationRefresh />
-        </div>
-        <div v-if="store.computation.summary.months_ahead_of_schedule > 0">
-          <p class="label">Ahead of schedule</p>
-          <p class="supporting">{{ store.computation.summary.months_ahead_of_schedule }} months</p>
-          <p class="caption readout">
-            <em>That's how far your extras have pulled your balance forward.</em>
-          </p>
-        </div>
-      </div>
-      <aside class="scenarios">
-        <p class="label">Scenarios</p>
-        <p class="readout"><em>What happens if you try something different?</em></p>
-
-        <ul v-if="(store.activeLoan.scenarios ?? []).length">
-          <li
-            v-for="scenario in store.activeLoan.scenarios ?? []"
-            :key="scenario.id"
-            :class="{ active: store.activeScenarioId === scenario.id }"
+        <div class="summary-facts">
+          <div>
+            <p class="label">Balance</p>
+            <p class="supporting">
+              {{ fmtCents(store.computation.summary.current_actual_balance) }}
+            </p>
+            <p class="caption">
+              Scheduled {{ fmtCents(store.computation.summary.current_scheduled_balance) }}
+            </p>
+          </div>
+          <div>
+            <p class="label">Interest paid</p>
+            <p class="supporting">
+              {{ fmtCents(store.computation.summary.actual_interest_to_date) }}
+            </p>
+            <p class="caption">{{ store.computation.summary.payments_made }} payments</p>
+          </div>
+          <div>
+            <p class="label">Current rate</p>
+            <p class="supporting">{{ currentRateDisplay }}</p>
+            <p class="caption">Payoff {{ store.computation.summary.projected_payoff_date }}</p>
+          </div>
+          <div>
+            <p class="label">Property value</p>
+            <p class="supporting">
+              {{ fmtCents(store.activeLoan.valuation.current.amount) }}
+            </p>
+            <p class="caption">As of {{ store.activeLoan.valuation.current.as_of }}</p>
+            <ValuationRefresh />
+          </div>
+          <div
+            title="Scheduled principal-and-interest payment. Either derived from principal + rate + term, or overridden in Edit loan."
           >
-            <button
-              type="button"
-              class="scenario-card"
-              :aria-pressed="store.activeScenarioId === scenario.id"
-              @click="store.toggleScenario(scenario.id)"
-            >
-              <p class="scenario-name">{{ scenario.name }}</p>
-              <p v-if="scenario.description" class="scenario-desc">
-                {{ scenario.description }}
-              </p>
-              <dl v-if="store.scenarios.get(scenario.id)" class="delta">
-                <div
-                  :class="{
-                    positive: store.scenarios.get(scenario.id)!.delta.interest_saved > 0,
-                    negative: store.scenarios.get(scenario.id)!.delta.interest_saved < 0,
-                  }"
-                >
-                  <dt>Interest delta</dt>
-                  <dd>
-                    {{ fmtCents(store.scenarios.get(scenario.id)!.delta.interest_saved) }}
-                  </dd>
-                </div>
-                <div
-                  :class="{
-                    positive: store.scenarios.get(scenario.id)!.delta.months_sooner > 0,
-                    negative: store.scenarios.get(scenario.id)!.delta.months_sooner < 0,
-                  }"
-                >
-                  <dt>Payoff sooner</dt>
-                  <dd>{{ store.scenarios.get(scenario.id)!.delta.months_sooner }} months</dd>
-                </div>
-              </dl>
-            </button>
-          </li>
-        </ul>
-        <p v-else class="readout empty"><em>No scenarios defined yet.</em></p>
-      </aside>
-    </section>
+            <p class="label">Monthly P+I</p>
+            <p class="supporting">
+              {{ fmtCents(store.computation.ledger[0]?.scheduled.payment ?? 0) }}
+            </p>
+            <p class="caption">
+              {{ store.activeLoan.loan.monthly_payment ? 'Manual override' : 'Derived' }}
+            </p>
+          </div>
+          <div
+            title="Portion of each monthly payment collected by the lender to cover property taxes and insurance."
+          >
+            <p class="label">Monthly escrow</p>
+            <p class="supporting">{{ fmtCents(store.activeLoan.loan.escrow_monthly) }}</p>
+            <p class="caption">
+              Total payment
+              {{
+                fmtCents(
+                  (store.computation.ledger[0]?.scheduled.payment ?? 0) +
+                    store.activeLoan.loan.escrow_monthly,
+                )
+              }}
+            </p>
+          </div>
+        </div>
+      </section>
 
-    <section class="charts">
-      <BalanceChart
-        :computation="store.computation"
-        :scenarios="store.activeScenarios"
-        :today="store.today"
-        :currency="currency"
-      />
-      <CompositionChart
-        :computation="store.computation"
-        :today="store.today"
-        :currency="currency"
-      />
-      <AmortizationTable :computation="store.computation" :currency="currency" />
-    </section>
+      <section class="mid">
+        <div class="balance-pane">
+          <BalanceChart
+            :computation="store.computation"
+            :scenarios="store.activeScenarios"
+            :today="store.today"
+            :currency="currency"
+          />
+        </div>
+        <aside class="scenarios">
+          <p class="label">Scenarios</p>
+          <ul v-if="(store.activeLoan.scenarios ?? []).length">
+            <li
+              v-for="scenario in store.activeLoan.scenarios ?? []"
+              :key="scenario.id"
+              :class="{ active: store.activeScenarioId === scenario.id }"
+            >
+              <button
+                type="button"
+                class="scenario-card"
+                :aria-pressed="store.activeScenarioId === scenario.id"
+                @click="store.toggleScenario(scenario.id)"
+              >
+                <p class="scenario-name">{{ scenario.name }}</p>
+                <dl v-if="store.scenarios.get(scenario.id)" class="delta">
+                  <div
+                    :class="{
+                      positive: store.scenarios.get(scenario.id)!.delta.interest_saved > 0,
+                      negative: store.scenarios.get(scenario.id)!.delta.interest_saved < 0,
+                    }"
+                  >
+                    <dt>Interest</dt>
+                    <dd>
+                      {{ fmtCents(store.scenarios.get(scenario.id)!.delta.interest_saved) }}
+                    </dd>
+                  </div>
+                  <div
+                    :class="{
+                      positive: store.scenarios.get(scenario.id)!.delta.months_sooner > 0,
+                      negative: store.scenarios.get(scenario.id)!.delta.months_sooner < 0,
+                    }"
+                  >
+                    <dt>Sooner</dt>
+                    <dd>{{ store.scenarios.get(scenario.id)!.delta.months_sooner }} mo</dd>
+                  </div>
+                </dl>
+              </button>
+            </li>
+          </ul>
+          <p v-else class="readout empty"><em>No scenarios yet.</em></p>
+        </aside>
+      </section>
+
+      <section class="ledger">
+        <AmortizationTable :computation="store.computation" :currency="currency" />
+      </section>
+    </template>
 
     <CsvImportDialog :open="importOpen" @close="importOpen = false" />
   </main>
 </template>
 
 <style scoped>
-main {
-  max-width: 1280px;
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 3rem clamp(1rem, 2vw, 2rem);
+  padding: 1rem clamp(1rem, 2vw, 2rem);
+  gap: 1rem;
   color: var(--ll-ink);
   font-family: var(--ll-font-sans);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .site-header {
@@ -224,19 +244,20 @@ main {
   justify-content: space-between;
   align-items: flex-start;
   gap: 2rem;
-  margin-bottom: 2rem;
   flex-wrap: wrap;
+  flex: none;
 }
 
 h1 {
   font-family: var(--ll-font-serif);
-  font-size: 1.953rem;
+  font-size: 1.5625rem;
   font-weight: 500;
   margin: 0;
+  line-height: 1.1;
 }
 
 .source {
-  margin-top: 0.25rem;
+  margin-top: 0.125rem;
 }
 
 .dirty {
@@ -246,15 +267,15 @@ h1 {
 
 .controls {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
 }
 
 button {
   font-family: var(--ll-font-sans);
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.875rem;
   border-radius: 4px;
   cursor: pointer;
   transition:
@@ -299,14 +320,14 @@ button {
 }
 
 .banner {
-  padding: 1rem 1.25rem;
+  padding: 0.5rem 0.875rem;
   border-radius: 4px;
-  margin-bottom: 2rem;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  flex: none;
 }
 
 .banner ul {
-  margin: 0.5rem 0 0;
+  margin: 0.25rem 0 0;
   padding: 0 0 0 1.25rem;
 }
 
@@ -322,12 +343,12 @@ button {
 
 .eyebrow,
 .label {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ll-ink-muted);
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.25rem;
 }
 
 .supporting {
@@ -339,68 +360,98 @@ button {
     'tnum' 1,
     'lnum' 1;
   font-variant-numeric: tabular-nums lining-nums;
+  line-height: 1.2;
 }
 
 .caption {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--ll-ink-muted);
-  margin: 0.25rem 0 0;
+  margin: 0.125rem 0 0;
 }
 
 .readout {
   font-family: var(--ll-font-serif);
   font-style: italic;
-  font-size: 1.25rem;
   color: var(--ll-ink-soft);
-  line-height: 1.4;
 }
 
 .readout.empty {
-  font-size: 1rem;
+  font-size: 0.875rem;
   color: var(--ll-ink-muted);
+  margin: 0.5rem 0 0;
 }
 
 .summary {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) minmax(260px, 320px);
-  gap: 3rem;
-  align-items: start;
-  padding: 2rem 0 3rem;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 2rem;
+  align-items: center;
+  padding: 1.5rem 0;
   border-top: 1px solid var(--ll-ink-faint);
   border-bottom: 1px solid var(--ll-ink-faint);
-  margin-bottom: 3rem;
+  flex: none;
 }
 
 .summary-gauge {
   display: flex;
   justify-content: center;
-  align-self: center;
+}
+
+.summary-gauge :deep(svg) {
+  max-width: 260px;
 }
 
 .summary-facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 1.5rem 2rem;
-  align-self: center;
 }
 
-.charts {
+.mid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 1.5rem;
+  min-height: 0;
+  flex: none;
+  height: 480px;
+}
+
+.balance-pane {
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+}
+
+.balance-pane :deep(figure) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin: 0;
+}
+
+.balance-pane :deep(svg) {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
 }
 
 .scenarios {
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .scenarios ul {
   list-style: none;
   padding: 0;
-  margin: 1rem 0 0;
+  margin: 0.5rem 0 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .scenario-card {
@@ -409,7 +460,7 @@ button {
   border: none;
   border-left: 2px solid transparent;
   border-radius: 4px;
-  padding: 1rem 1.25rem;
+  padding: 0.625rem 0.875rem;
   text-align: left;
   cursor: pointer;
   color: var(--ll-ink);
@@ -429,34 +480,29 @@ button {
 
 .scenario-name {
   font-family: var(--ll-font-serif);
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 500;
-  margin: 0;
-}
-
-.scenario-desc {
-  font-size: 0.875rem;
-  color: var(--ll-ink-muted);
-  margin: 0.25rem 0 0.75rem;
-  line-height: 1.4;
+  margin: 0 0 0.25rem;
+  line-height: 1.2;
 }
 
 .delta {
   margin: 0;
   display: grid;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .delta div {
   display: flex;
   justify-content: space-between;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
 .delta dt {
   color: var(--ll-ink-muted);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .delta dd {
@@ -476,14 +522,37 @@ button {
   color: var(--ll-negative);
 }
 
-@media (width <= 900px) {
-  .summary {
-    grid-template-columns: 1fr;
-    gap: 2rem;
+.ledger {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.editing-overlay {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+
+@media (width < 900px) {
+  .app {
+    height: auto;
+    max-height: none;
+    overflow: auto;
   }
 
-  .layout {
+  .summary {
     grid-template-columns: 1fr;
+  }
+
+  .mid {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .ledger {
+    flex: none;
   }
 }
 </style>

@@ -1,4 +1,10 @@
-import type { DateString, LoanFile, Payment, RateScheduleEntry } from '../model/types.js';
+import type {
+  DateString,
+  LoanFile,
+  Payment,
+  RateScheduleEntry,
+  ScheduledExtra,
+} from '../model/types.js';
 import { addMonths, compareDates, parseISODate, toISODate, todayISO } from '../util/date.js';
 import type {
   ActualPart,
@@ -28,6 +34,8 @@ export function computeLoan(loan: LoanFile, opts: ComputeOptions = {}): LoanComp
 
 function buildLedger(loan: LoanFile): LedgerRow[] {
   const { principal, term_months, first_payment_date, escrow_monthly, rate_schedule } = loan.loan;
+  const override = loan.loan.monthly_payment;
+  const scheduledExtras = loan.loan.scheduled_extras ?? [];
   const actualsByDate = indexPaymentsByDate(loan.payments ?? []);
   const sortedRateSchedule = [...rate_schedule].sort((a, b) =>
     compareDates(a.effective_date, b.effective_date),
@@ -38,11 +46,13 @@ function buildLedger(loan: LoanFile): LedgerRow[] {
 
   let scheduledBalance = principal;
   let actualBalance = principal;
-  let monthlyPI = computeMonthlyPayment(
-    principal,
-    currentRate(sortedRateSchedule, first_payment_date) / 12,
-    term_months,
-  );
+  let monthlyPI =
+    override ??
+    computeMonthlyPayment(
+      principal,
+      currentRate(sortedRateSchedule, first_payment_date) / 12,
+      term_months,
+    );
   let lastRate = currentRate(sortedRateSchedule, first_payment_date);
 
   for (let period = 1; period <= term_months; period += 1) {
@@ -51,12 +61,23 @@ function buildLedger(loan: LoanFile): LedgerRow[] {
     const monthlyRate = annualRate / 12;
     const remainingMonths = term_months - (period - 1);
 
-    if (annualRate !== lastRate) {
+    if (annualRate !== lastRate && override === undefined) {
       monthlyPI = computeMonthlyPayment(scheduledBalance, monthlyRate, remainingMonths);
+      lastRate = annualRate;
+    } else if (annualRate !== lastRate) {
+      // Override active — keep the fixed P+I but update lastRate so interest is
+      // calculated at the new rate going forward.
       lastRate = annualRate;
     }
 
-    const scheduled = buildScheduledRow(scheduledBalance, monthlyRate, monthlyPI, escrow_monthly);
+    const scheduledExtra = extraForDate(scheduledExtras, dateString);
+    const scheduled = buildScheduledRow(
+      scheduledBalance,
+      monthlyRate,
+      monthlyPI,
+      escrow_monthly,
+      scheduledExtra,
+    );
     scheduledBalance = scheduled.balance_after;
 
     const row: LedgerRow = {
@@ -109,6 +130,7 @@ function buildScheduledRow(
   monthlyRate: number,
   monthlyPI: number,
   escrow: number,
+  extra: number,
 ): ScheduledPart {
   const interest = ROUND(balance * monthlyRate);
   let principal = ROUND(monthlyPI - interest);
@@ -117,16 +139,33 @@ function buildScheduledRow(
   if (principal >= balance) {
     principal = ROUND(balance);
     payment = ROUND(principal + interest);
+    // Final payment already clears the balance — no room for a committed extra.
+    return { payment, principal, interest, escrow, extra: 0, balance_after: 0 };
   }
 
-  const balance_after = ROUND(balance - principal);
+  // Committed extra can't drive the balance below zero; clamp it if needed.
+  const remainingAfterPrincipal = ROUND(balance - principal);
+  const appliedExtra = Math.min(ROUND(extra), remainingAfterPrincipal);
+  const balance_after = ROUND(remainingAfterPrincipal - appliedExtra);
+
   return {
     payment,
     principal,
     interest,
     escrow,
+    extra: appliedExtra,
     balance_after,
   };
+}
+
+function extraForDate(extras: ScheduledExtra[], date: DateString): number {
+  let total = 0;
+  for (const e of extras) {
+    if (date < e.start_date) continue;
+    if (e.end_date !== undefined && date > e.end_date) continue;
+    total += e.amount;
+  }
+  return total;
 }
 
 function applyActualPayment(

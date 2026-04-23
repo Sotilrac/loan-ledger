@@ -36,6 +36,73 @@ function sortRateSchedule() {
   });
 }
 
+function addExtraEntry() {
+  store.updateDraft((d) => {
+    const list = (d.loan.scheduled_extras ??= []);
+    list.push({ start_date: d.loan.first_payment_date, amount: 100 });
+  });
+}
+
+function removeExtraEntry(index: number) {
+  store.updateDraft((d) => {
+    if (!d.loan.scheduled_extras) return;
+    d.loan.scheduled_extras.splice(index, 1);
+  });
+}
+
+function updateExtraEntry(
+  index: number,
+  field: 'start_date' | 'end_date' | 'amount' | 'note',
+  raw: string,
+) {
+  store.updateDraft((d) => {
+    const list = d.loan.scheduled_extras;
+    if (!list) return;
+    const entry = list[index];
+    if (!entry) return;
+    if (field === 'start_date') entry.start_date = raw;
+    else if (field === 'end_date') {
+      if (raw === '') delete entry.end_date;
+      else entry.end_date = raw;
+    } else if (field === 'amount') entry.amount = Number(raw);
+    else if (field === 'note') {
+      if (raw === '') delete entry.note;
+      else entry.note = raw;
+    }
+  });
+}
+
+function updatePropertyArray(value: string) {
+  // Features: comma-separated input → string[]
+  store.updateDraft((d) => {
+    const features = value
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    if (features.length === 0) delete d.property.features;
+    else d.property.features = features;
+  });
+}
+
+function updatePropertyOptional<
+  K extends
+    | 'address'
+    | 'year_built'
+    | 'bedrooms'
+    | 'bathrooms'
+    | 'square_feet'
+    | 'lot_size_sqft'
+    | 'notes',
+>(field: K, value: string | number | undefined) {
+  store.updateDraft((d) => {
+    if (value === undefined || value === '' || (typeof value === 'number' && Number.isNaN(value))) {
+      delete d.property[field];
+    } else {
+      (d.property[field] as typeof value) = value;
+    }
+  });
+}
+
 /** Write into the active draft. Safe because isEditing guarantees draft exists. */
 function updateProperty<K extends keyof NonNullable<typeof store.draft>['property']>(
   field: K,
@@ -114,6 +181,124 @@ const d = computed(() => store.draft);
             "
           />
         </div>
+      </div>
+      <div class="field">
+        <label for="property-address">Address</label>
+        <input
+          id="property-address"
+          type="text"
+          :value="d.property.address ?? ''"
+          @input="updatePropertyOptional('address', ($event.target as HTMLInputElement).value)"
+        />
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="year-built">Year built</label>
+          <input
+            id="year-built"
+            type="number"
+            min="1600"
+            max="2200"
+            :value="d.property.year_built ?? ''"
+            @input="
+              updatePropertyOptional(
+                'year_built',
+                ($event.target as HTMLInputElement).value === ''
+                  ? undefined
+                  : Number(($event.target as HTMLInputElement).value),
+              )
+            "
+          />
+        </div>
+        <div class="field">
+          <label for="bedrooms">Bedrooms</label>
+          <input
+            id="bedrooms"
+            type="number"
+            min="0"
+            step="0.5"
+            :value="d.property.bedrooms ?? ''"
+            @input="
+              updatePropertyOptional(
+                'bedrooms',
+                ($event.target as HTMLInputElement).value === ''
+                  ? undefined
+                  : Number(($event.target as HTMLInputElement).value),
+              )
+            "
+          />
+        </div>
+        <div class="field">
+          <label for="bathrooms">Bathrooms</label>
+          <input
+            id="bathrooms"
+            type="number"
+            min="0"
+            step="0.5"
+            :value="d.property.bathrooms ?? ''"
+            @input="
+              updatePropertyOptional(
+                'bathrooms',
+                ($event.target as HTMLInputElement).value === ''
+                  ? undefined
+                  : Number(($event.target as HTMLInputElement).value),
+              )
+            "
+          />
+        </div>
+        <div class="field">
+          <label for="sqft">Square feet</label>
+          <input
+            id="sqft"
+            type="number"
+            min="0"
+            :value="d.property.square_feet ?? ''"
+            @input="
+              updatePropertyOptional(
+                'square_feet',
+                ($event.target as HTMLInputElement).value === ''
+                  ? undefined
+                  : Number(($event.target as HTMLInputElement).value),
+              )
+            "
+          />
+        </div>
+        <div class="field">
+          <label for="lot-sqft">Lot (sqft)</label>
+          <input
+            id="lot-sqft"
+            type="number"
+            min="0"
+            :value="d.property.lot_size_sqft ?? ''"
+            @input="
+              updatePropertyOptional(
+                'lot_size_sqft',
+                ($event.target as HTMLInputElement).value === ''
+                  ? undefined
+                  : Number(($event.target as HTMLInputElement).value),
+              )
+            "
+          />
+        </div>
+      </div>
+      <div class="field">
+        <label for="features">Features (comma-separated)</label>
+        <input
+          id="features"
+          type="text"
+          placeholder="garage, fireplace, finished basement"
+          :value="(d.property.features ?? []).join(', ')"
+          @input="updatePropertyArray(($event.target as HTMLInputElement).value)"
+        />
+      </div>
+      <div class="field">
+        <label for="property-notes">Notes</label>
+        <input
+          id="property-notes"
+          type="text"
+          :value="d.property.notes ?? ''"
+          @input="updatePropertyOptional('notes', ($event.target as HTMLInputElement).value)"
+        />
       </div>
     </fieldset>
 
@@ -226,6 +411,27 @@ const d = computed(() => store.draft);
             "
           />
         </div>
+        <div
+          class="field"
+          title="Overrides the computed P+I. Leave blank to let the amortization formula decide."
+        >
+          <label for="monthly-payment">Monthly payment (P+I)</label>
+          <input
+            id="monthly-payment"
+            type="number"
+            step="0.01"
+            placeholder="Auto"
+            :value="d.loan.monthly_payment ?? ''"
+            @input="
+              updateLoanField(
+                'monthly_payment',
+                ($event.target as HTMLInputElement).value === ''
+                  ? undefined
+                  : Number(($event.target as HTMLInputElement).value),
+              )
+            "
+          />
+        </div>
       </div>
     </fieldset>
 
@@ -282,6 +488,70 @@ const d = computed(() => store.draft);
         </tbody>
       </table>
       <button type="button" class="add" @click="addRateEntry">+ Add rate entry</button>
+    </fieldset>
+
+    <fieldset>
+      <legend class="label">Scheduled extra principal</legend>
+      <p class="hint">
+        Recurring amounts you commit to paying on top of the scheduled payment. Leave
+        <em>End date</em> blank to run forever.
+      </p>
+      <table class="rate-table">
+        <thead>
+          <tr>
+            <th>Start date</th>
+            <th>End date</th>
+            <th class="num">Amount per month</th>
+            <th>Note</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(entry, index) in d.loan.scheduled_extras ?? []" :key="index">
+            <td>
+              <input
+                type="date"
+                :value="entry.start_date"
+                @input="
+                  updateExtraEntry(index, 'start_date', ($event.target as HTMLInputElement).value)
+                "
+              />
+            </td>
+            <td>
+              <input
+                type="date"
+                :value="entry.end_date ?? ''"
+                @input="
+                  updateExtraEntry(index, 'end_date', ($event.target as HTMLInputElement).value)
+                "
+              />
+            </td>
+            <td class="num">
+              <input
+                type="number"
+                step="1"
+                min="1"
+                :value="entry.amount"
+                @input="
+                  updateExtraEntry(index, 'amount', ($event.target as HTMLInputElement).value)
+                "
+              />
+            </td>
+            <td>
+              <input
+                type="text"
+                placeholder="optional"
+                :value="entry.note ?? ''"
+                @input="updateExtraEntry(index, 'note', ($event.target as HTMLInputElement).value)"
+              />
+            </td>
+            <td>
+              <button type="button" class="remove" @click="removeExtraEntry(index)">Remove</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button type="button" class="add" @click="addExtraEntry">+ Add recurring extra</button>
     </fieldset>
 
     <p class="note">
@@ -362,12 +632,13 @@ select:focus {
   padding-bottom: calc(0.5rem - 1px);
 }
 
-.note {
+.note,
+.hint {
   font-family: var(--ll-font-serif);
   font-style: italic;
   font-size: 0.875rem;
   color: var(--ll-ink-muted);
-  margin: 0;
+  margin: 0 0 0.75rem;
 }
 
 .rate-table {

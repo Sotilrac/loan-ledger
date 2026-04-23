@@ -288,7 +288,7 @@ function onLeave() {
 
 svg {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   cursor: crosshair;
 }

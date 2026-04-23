@@ -5,6 +5,8 @@ export interface ScheduledPart {
   principal: number;
   interest: number;
   escrow: number;
+  /** Committed recurring extra principal applied this month (may be 0). */
+  extra: number;
   balance_after: number;
 }
 

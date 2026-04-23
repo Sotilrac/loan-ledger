@@ -17,6 +17,14 @@ export interface Property {
   purchase_date: DateString;
   purchase_price: number;
   currency: Currency;
+  address?: string;
+  year_built?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  square_feet?: number;
+  lot_size_sqft?: number;
+  features?: string[];
+  notes?: string;
 }
 
 export type ValuationSource = 'manual' | 'custom_url';
@@ -33,6 +41,16 @@ export interface ValuationBlock {
   history?: Valuation[];
 }
 
+export interface ScheduledExtra {
+  /** Inclusive. */
+  start_date: DateString;
+  /** Inclusive. Omit for "forever" (until the loan ends). */
+  end_date?: DateString;
+  /** Extra principal amount applied each scheduled payment in the range. */
+  amount: number;
+  note?: string;
+}
+
 export interface LoanTerms {
   principal: number;
   annual_rate: number;
@@ -42,6 +60,19 @@ export interface LoanTerms {
   payment_day: number;
   escrow_monthly: number;
   rate_schedule: RateScheduleEntry[];
+  /**
+   * Optional override of the scheduled monthly P+I amount. When set, the
+   * engine uses this instead of the amortization formula and skips
+   * re-amortization on rate changes. Useful when the bank specifies a fixed
+   * monthly payment that differs from what the formula produces.
+   */
+  monthly_payment?: number;
+  /**
+   * Recurring extra-principal commitments the user plans to make. Each entry
+   * applies to every scheduled payment between `start_date` and `end_date`
+   * (inclusive). These reduce the scheduled balance ahead of schedule.
+   */
+  scheduled_extras?: ScheduledExtra[];
 }
 
 export interface Payment {

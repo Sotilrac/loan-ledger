@@ -8,12 +8,11 @@ describe('App', () => {
     setActivePinia(createPinia());
   });
 
-  it('renders the demo ledger with charts and table', () => {
+  it('renders the demo ledger with chart, scenarios, and table', () => {
     const wrapper = mount(App);
     expect(wrapper.text()).toContain('Demo residence');
     expect(wrapper.text()).toContain('EQUITY');
     expect(wrapper.text()).toContain('Balance over time');
-    expect(wrapper.text()).toContain('Payment composition');
     expect(wrapper.text()).toContain('Amortization');
     expect(wrapper.text()).toContain('Scenarios');
     expect(wrapper.text()).toContain('Edit loan');
