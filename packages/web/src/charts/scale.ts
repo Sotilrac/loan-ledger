@@ -53,23 +53,29 @@ export function formatShortCurrency(n: number, currency: string = 'USD'): string
   return `${sign}${symbol}${abs.toFixed(0)}`;
 }
 
+const MONTH_NAMES = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
 export function formatMonthLabel(iso: string): string {
   const [y, m] = iso.split('-');
-  const monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return `${monthNames[Number(m) - 1]} ${y?.slice(2)}`;
+  return `${MONTH_NAMES[Number(m) - 1]} ${y?.slice(2)}`;
+}
+
+export function formatMonthOnly(iso: string): string {
+  const [, m] = iso.split('-');
+  return MONTH_NAMES[Number(m) - 1] ?? '';
 }
 
 function round(n: number): number {

@@ -2,7 +2,7 @@
 import type { LedgerRow, LoanComputation, Payment } from '@loan-ledger/core';
 import { PhPencilSimple, PhTrash, PhX } from '@phosphor-icons/vue';
 import { computed, reactive, ref, watch } from 'vue';
-import { formatMonthLabel } from '../charts/scale.js';
+import { formatMonthOnly } from '../charts/scale.js';
 import { useLoanStore } from '../stores/loan.js';
 
 const props = defineProps<{
@@ -11,7 +11,7 @@ const props = defineProps<{
 }>();
 
 const store = useLoanStore();
-const tbody = ref<HTMLTableSectionElement | null>(null);
+const scrollEl = ref<HTMLElement | null>(null);
 
 const fmtMoney = (n: number): string =>
   new Intl.NumberFormat('en-US', {
@@ -22,6 +22,25 @@ const fmtMoney = (n: number): string =>
 const fmtRate = (n: number): string => `${(n * 100).toFixed(3)}%`;
 
 const rows = computed(() => props.computation.ledger);
+
+interface YearGroup {
+  year: string;
+  rows: Array<{ row: LedgerRow; idx: number }>;
+}
+
+const yearGroups = computed<YearGroup[]>(() => {
+  const groups: YearGroup[] = [];
+  props.computation.ledger.forEach((row, idx) => {
+    const year = row.date.slice(0, 4);
+    const last = groups[groups.length - 1];
+    if (last && last.year === year) {
+      last.rows.push({ row, idx });
+    } else {
+      groups.push({ year, rows: [{ row, idx }] });
+    }
+  });
+  return groups;
+});
 
 /**
  * Max total payment across all rows — used to scale per-row composition bars.
@@ -102,8 +121,8 @@ function tableScrollsInternally(): boolean {
 watch(
   () => store.selectedPeriod,
   (period) => {
-    if (period == null || !tbody.value || !tableScrollsInternally()) return;
-    const row = tbody.value.querySelector(`[data-period="${period}"]`);
+    if (period == null || !scrollEl.value || !tableScrollsInternally()) return;
+    const row = scrollEl.value.querySelector(`[data-period="${period}"]`);
     if (row && typeof (row as Element).scrollIntoView === 'function') {
       (row as Element).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
@@ -114,8 +133,8 @@ watch(
   () => [props.computation.ledger.length, store.today],
   () => {
     requestAnimationFrame(() => {
-      if (!tbody.value || !tableScrollsInternally()) return;
-      const todayRow = tbody.value.querySelector('.today-marker');
+      if (!scrollEl.value || !tableScrollsInternally()) return;
+      const todayRow = scrollEl.value.querySelector('.today-marker');
       if (todayRow && typeof (todayRow as Element).scrollIntoView === 'function') {
         (todayRow as Element).scrollIntoView({ block: 'center' });
       }
@@ -199,13 +218,6 @@ function deleteCurrent() {
   store.deletePayment(editingDate.value);
   editingDate.value = null;
 }
-
-function showsYearDivider(row: LedgerRow, idx: number): boolean {
-  if (idx === 0) return false;
-  const prev = props.computation.ledger[idx - 1];
-  if (!prev) return false;
-  return prev.date.slice(0, 4) !== row.date.slice(0, 4);
-}
 </script>
 
 <template>
@@ -233,7 +245,7 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
         </li>
       </ul>
     </div>
-    <div class="scroll">
+    <div ref="scrollEl" class="scroll">
       <table>
         <thead>
           <tr>
@@ -247,13 +259,13 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
             <th class="bar-col">Composition</th>
           </tr>
         </thead>
-        <tbody ref="tbody">
-          <template v-for="(row, idx) in rows" :key="row.period">
-            <tr v-if="showsYearDivider(row, idx)" class="year-divider">
-              <td colspan="8">
-                <span>{{ row.date.slice(0, 4) }}</span>
-              </td>
-            </tr>
+        <tbody v-for="group in yearGroups" :key="group.year">
+          <tr class="year-divider">
+            <td colspan="8">
+              <span>{{ group.year }}</span>
+            </td>
+          </tr>
+          <template v-for="{ row, idx } in group.rows" :key="row.period">
             <tr v-if="showsTodayMarker(row, idx)" class="today-marker">
               <td colspan="8"><span>today</span></td>
             </tr>
@@ -264,7 +276,7 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
               @mouseleave="onHover(null)"
             >
               <td class="date-cell">
-                <span class="date-text">{{ formatMonthLabel(row.date) }}</span>
+                <span class="date-text">{{ formatMonthOnly(row.date) }}</span>
                 <button
                   type="button"
                   class="row-edit-btn"
@@ -387,7 +399,6 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
 
 .caption-row {
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
   gap: 1.5rem;
   flex-wrap: wrap;
@@ -406,8 +417,9 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
 
 .legend {
   display: flex;
-  gap: 1.25rem;
-  margin: 0;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 0 auto;
   padding: 0;
   list-style: none;
   font-size: 0.75rem;
@@ -526,7 +538,7 @@ thead {
   position: sticky;
   top: 0;
   background: var(--ll-paper);
-  z-index: 1;
+  z-index: 2;
 }
 
 thead th {
@@ -547,7 +559,10 @@ thead th:nth-child(1) {
 }
 
 thead th:nth-child(2) {
-  width: 2.5rem;
+  width: 2rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  text-align: center;
 }
 
 thead th:nth-child(3) {
@@ -591,6 +606,9 @@ tbody td {
 .period {
   color: var(--ll-ink-muted);
   font-size: 0.75rem;
+  text-align: center;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
 }
 
 .actual-row td:first-child {
@@ -621,6 +639,12 @@ tbody tr.selected {
   border-top: 1px solid var(--ll-ink-faint);
   border-bottom: none;
   background: var(--ll-paper) !important;
+}
+
+.year-divider td {
+  position: sticky;
+  top: 2rem;
+  z-index: 1;
 }
 
 .year-divider span {

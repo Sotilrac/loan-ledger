@@ -34,6 +34,8 @@ const sourceLabel = computed(() => {
   return store.fileName;
 });
 
+const lastUpdatedYear = 2026;
+
 async function onSave() {
   await store.save();
 }
@@ -43,7 +45,13 @@ async function onSave() {
   <main class="app">
     <header class="site-header">
       <div class="title-block">
-        <p class="eyebrow">Loan Ledger</p>
+        <p class="eyebrow">
+          Loan Ledger
+          <span class="by">
+            by
+            <a href="https://asmat.ca" target="_blank" rel="noopener noreferrer">Carlos Asmat</a>
+          </span>
+        </p>
         <h1>{{ store.activeLoan.property.name }}</h1>
         <p class="source caption">{{ sourceLabel }}</p>
         <p v-if="(store.activeLoan.property.links ?? []).length" class="property-links">
@@ -82,7 +90,12 @@ async function onSave() {
         <button v-if="!store.isEditing" class="secondary" type="button" @click="store.downloadYaml">
           Save
         </button>
-        <button v-if="!store.isEditing" class="tertiary" type="button" @click="store.loadDemo">
+        <button
+          v-if="!store.isEditing"
+          class="tertiary demo-btn"
+          type="button"
+          @click="store.loadDemo"
+        >
           Use demo data
         </button>
       </div>
@@ -207,12 +220,11 @@ async function onSave() {
 
     <aside class="attribution" aria-label="Attribution">
       <span class="attribution-line">
+        Updated {{ lastUpdatedYear }}
+        <span class="sep">·</span>
         <a href="https://gitlab.com/sotilrac/loan-ledger" target="_blank" rel="noopener noreferrer">
           View source
         </a>
-        <span class="sep">·</span>
-        by
-        <a href="https://asmat.ca" target="_blank" rel="noopener noreferrer">Carlos Asmat</a>
       </span>
     </aside>
   </main>
