@@ -157,9 +157,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
 
       <template v-if="m.type === 'recurring_extra_principal'">
         <input
-          type="text"
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          type="date"
           :value="m.start_date"
           title="Start date"
           @input="
@@ -167,9 +165,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
           "
         />
         <input
-          type="text"
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          type="date"
           :value="m.end_date ?? ''"
           title="End date (leave blank for forever)"
           @input="updateMutationField(mIdx, 'end_date', ($event.target as HTMLInputElement).value)"
@@ -188,9 +184,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
 
       <template v-else-if="m.type === 'one_time_extra'">
         <input
-          type="text"
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          type="date"
           :value="m.date"
           @input="updateMutationField(mIdx, 'date', ($event.target as HTMLInputElement).value)"
         />
@@ -207,9 +201,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
 
       <template v-else-if="m.type === 'change_rate'">
         <input
-          type="text"
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          type="date"
           :value="m.effective_date"
           @input="
             updateMutationField(mIdx, 'effective_date', ($event.target as HTMLInputElement).value)
@@ -234,9 +226,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
 
       <template v-else-if="m.type === 'change_term'">
         <input
-          type="text"
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          type="date"
           :value="m.effective_date"
           @input="
             updateMutationField(mIdx, 'effective_date', ($event.target as HTMLInputElement).value)
@@ -260,9 +250,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
 
       <template v-else-if="m.type === 'stop_extra_payments'">
         <input
-          type="text"
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          type="date"
           :value="m.effective_date"
           @input="
             updateMutationField(mIdx, 'effective_date', ($event.target as HTMLInputElement).value)
@@ -272,9 +260,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
 
       <template v-else-if="m.type === 'change_escrow'">
         <input
-          type="text"
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          type="date"
           :value="m.effective_date"
           @input="
             updateMutationField(mIdx, 'effective_date', ($event.target as HTMLInputElement).value)
@@ -297,9 +283,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
 
       <template v-else-if="m.type === 'remove_payment'">
         <input
-          type="text"
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          type="date"
           :value="m.date"
           @input="updateMutationField(mIdx, 'date', ($event.target as HTMLInputElement).value)"
         />
@@ -318,9 +302,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
 
       <template v-else-if="m.type === 'replace_payment'">
         <input
-          type="text"
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
+          type="date"
           :value="m.date"
           @input="updateMutationField(mIdx, 'date', ($event.target as HTMLInputElement).value)"
         />
