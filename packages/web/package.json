@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@loan-ledger/core": "workspace:*",
+    "idb-keyval": "^6.2.2",
+    "pinia": "^3.0.4",
     "vue": "^3.5.33"
   },
   "devDependencies": {

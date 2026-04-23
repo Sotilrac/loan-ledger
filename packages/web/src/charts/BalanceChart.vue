@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { LoanComputation, ScenarioEvaluation } from '@loan-ledger/core';
 import { todayISO } from '@loan-ledger/core';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
+import { useLoanStore } from '../stores/loan.js';
 import { chartFont, chartMargin, chartPalette } from './palette.js';
 import { formatMonthLabel, formatShortCurrency, linearScale, niceTicks } from './scale.js';
 
@@ -100,11 +101,11 @@ const scenarioPaths = computed(() => {
   });
 });
 
-// Hover state
-const hoverIndex = ref<number | null>(null);
+// Hover state — shared with the amortization table via the Pinia store.
+const store = useLoanStore();
 const hoverPoint = computed(() => {
-  if (hoverIndex.value === null) return null;
-  return points.value[hoverIndex.value] ?? null;
+  if (store.selectedPeriod == null) return null;
+  return points.value[store.selectedPeriod - 1] ?? null;
 });
 
 function onMove(event: MouseEvent) {
@@ -113,16 +114,17 @@ function onMove(event: MouseEvent) {
   const px = ((event.clientX - rect.left) / rect.width) * width;
   const relX = px - chartMargin.left;
   if (relX < 0 || relX > plotW) {
-    hoverIndex.value = null;
+    store.setSelectedPeriod(null);
     return;
   }
   const domX = (relX / plotW) * (domainX[1] - domainX[0]) + domainX[0];
   const idx = Math.round(domX);
-  hoverIndex.value = Math.max(0, Math.min(points.value.length - 1, idx));
+  const clamped = Math.max(0, Math.min(points.value.length - 1, idx));
+  store.setSelectedPeriod(clamped + 1);
 }
 
 function onLeave() {
-  hoverIndex.value = null;
+  store.setSelectedPeriod(null);
 }
 </script>
 

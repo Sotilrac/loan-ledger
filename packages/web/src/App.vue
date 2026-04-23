@@ -1,24 +1,16 @@
 <script setup lang="ts">
-import { DEMO_LOAN, computeLoan, evaluateAllScenarios, todayISO } from '@loan-ledger/core';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import BalanceChart from './charts/BalanceChart.vue';
 import CompositionChart from './charts/CompositionChart.vue';
 import EquityGauge from './charts/EquityGauge.vue';
+import AmortizationTable from './components/AmortizationTable.vue';
+import FilePicker from './components/FilePicker.vue';
+import LoanEditForm from './components/LoanEditForm.vue';
+import { useLoanStore } from './stores/loan.js';
 
-const today = todayISO();
+const store = useLoanStore();
 
-const computation = computed(() => computeLoan(DEMO_LOAN, { today }));
-const allScenarios = computed(() => evaluateAllScenarios(DEMO_LOAN, { today }));
-
-const activeScenarioId = ref<string | null>(null);
-const activeScenarios = computed(() => {
-  if (!activeScenarioId.value) return new Map();
-  const evalResult = allScenarios.value.get(activeScenarioId.value);
-  if (!evalResult) return new Map();
-  return new Map([[activeScenarioId.value, evalResult]]);
-});
-
-const currency = computed(() => DEMO_LOAN.property.currency);
+const currency = computed(() => store.activeLoan.property.currency);
 
 const fmtCents = (n: number): string =>
   new Intl.NumberFormat('en-US', {
@@ -29,52 +21,104 @@ const fmtCents = (n: number): string =>
 const fmtPercent = (n: number): string => `${(n * 100).toFixed(3)}%`;
 
 const currentRateDisplay = computed(() => {
-  const madeRows = computation.value.ledger.filter((r) => r.actual);
+  const madeRows = store.computation.ledger.filter((r) => r.actual);
   const last = madeRows[madeRows.length - 1];
-  return fmtPercent(last?.rate ?? DEMO_LOAN.loan.annual_rate);
+  return fmtPercent(last?.rate ?? store.activeLoan.loan.annual_rate);
 });
 
-function toggleScenario(id: string) {
-  activeScenarioId.value = activeScenarioId.value === id ? null : id;
+const sourceLabel = computed(() => {
+  if (store.source === 'demo') return 'Demo data';
+  if (store.source === 'fsa') return `${store.fileName} · will save in place`;
+  return `${store.fileName} · saves as download`;
+});
+
+async function onSave() {
+  await store.save();
 }
 </script>
 
 <template>
   <main>
-    <header>
-      <p class="eyebrow">Demo Ledger</p>
-      <h1>{{ DEMO_LOAN.property.name }}</h1>
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">Loan Ledger</p>
+        <h1>{{ store.activeLoan.property.name }}</h1>
+        <p class="source caption">
+          {{ sourceLabel
+          }}<span v-if="store.hasUnsavedChanges" class="dirty">· unsaved changes</span>
+        </p>
+      </div>
+      <div class="controls">
+        <FilePicker />
+        <button v-if="!store.isEditing" class="secondary" type="button" @click="store.startEditing">
+          Edit loan
+        </button>
+        <template v-else>
+          <button class="primary" type="button" @click="store.commitEditing">Done editing</button>
+          <button class="tertiary" type="button" @click="store.cancelEditing">Cancel</button>
+        </template>
+        <button
+          v-if="store.hasUnsavedChanges && !store.isEditing"
+          class="primary"
+          type="button"
+          :disabled="store.saveState === 'saving'"
+          @click="onSave"
+        >
+          {{ store.canWriteToFile ? 'Save to file' : 'Download YAML' }}
+        </button>
+      </div>
     </header>
+
+    <div v-if="store.validationErrors.length" class="banner error-banner">
+      <p>File failed validation. Showing last good state.</p>
+      <ul>
+        <li v-for="(err, i) in store.validationErrors.slice(0, 3)" :key="i">
+          <code>{{ err.path }}</code> — {{ err.message }}
+        </li>
+      </ul>
+    </div>
+    <div v-else-if="store.saveError" class="banner error-banner">
+      <p>Save failed: {{ store.saveError }}</p>
+    </div>
+
+    <LoanEditForm v-if="store.isEditing" />
 
     <section class="summary">
       <div class="summary-gauge">
         <EquityGauge
-          :equity="computation.summary.equity ?? 0"
-          :property-value="DEMO_LOAN.valuation.current.amount"
+          :equity="store.computation.summary.equity ?? 0"
+          :property-value="store.activeLoan.valuation.current.amount"
           :currency="currency"
         />
       </div>
       <div class="summary-facts">
         <div>
           <p class="label">Current balance</p>
-          <p class="supporting">{{ fmtCents(computation.summary.current_actual_balance) }}</p>
+          <p class="supporting">
+            {{ fmtCents(store.computation.summary.current_actual_balance) }}
+          </p>
           <p class="caption">
-            Scheduled would be {{ fmtCents(computation.summary.current_scheduled_balance) }}
+            Scheduled would be
+            {{ fmtCents(store.computation.summary.current_scheduled_balance) }}
           </p>
         </div>
         <div>
           <p class="label">Interest paid</p>
-          <p class="supporting">{{ fmtCents(computation.summary.actual_interest_to_date) }}</p>
-          <p class="caption">Over {{ computation.summary.payments_made }} payments</p>
+          <p class="supporting">
+            {{ fmtCents(store.computation.summary.actual_interest_to_date) }}
+          </p>
+          <p class="caption">Over {{ store.computation.summary.payments_made }} payments</p>
         </div>
         <div>
           <p class="label">Current rate</p>
           <p class="supporting">{{ currentRateDisplay }}</p>
-          <p class="caption">Payoff projected {{ computation.summary.projected_payoff_date }}</p>
+          <p class="caption">
+            Payoff projected {{ store.computation.summary.projected_payoff_date }}
+          </p>
         </div>
-        <div v-if="computation.summary.months_ahead_of_schedule > 0">
+        <div v-if="store.computation.summary.months_ahead_of_schedule > 0">
           <p class="label">Ahead of schedule</p>
-          <p class="supporting">{{ computation.summary.months_ahead_of_schedule }} months</p>
+          <p class="supporting">{{ store.computation.summary.months_ahead_of_schedule }} months</p>
           <p class="caption readout">
             <em>That's how far your extras have pulled your balance forward.</em>
           </p>
@@ -85,62 +129,58 @@ function toggleScenario(id: string) {
     <section class="layout">
       <div class="layout-main">
         <BalanceChart
-          :computation="computation"
-          :scenarios="activeScenarios"
-          :today="today"
+          :computation="store.computation"
+          :scenarios="store.scenarios"
+          :today="store.today"
           :currency="currency"
         />
-        <CompositionChart :computation="computation" :today="today" :currency="currency" />
+        <CompositionChart
+          :computation="store.computation"
+          :today="store.today"
+          :currency="currency"
+        />
+        <AmortizationTable :computation="store.computation" :currency="currency" />
       </div>
 
       <aside class="scenarios">
         <p class="label">Scenarios</p>
-        <p class="readout">
-          <em>What happens if you try something different?</em>
-        </p>
+        <p class="readout"><em>What happens if you try something different?</em></p>
 
-        <ul>
-          <li
-            v-for="scenario in DEMO_LOAN.scenarios ?? []"
-            :key="scenario.id"
-            :class="{ active: activeScenarioId === scenario.id }"
-          >
-            <button type="button" @click="toggleScenario(scenario.id)">
+        <ul v-if="(store.activeLoan.scenarios ?? []).length">
+          <li v-for="scenario in store.activeLoan.scenarios ?? []" :key="scenario.id">
+            <div class="scenario-card">
               <p class="scenario-name">{{ scenario.name }}</p>
               <p v-if="scenario.description" class="scenario-desc">
                 {{ scenario.description }}
               </p>
-              <dl v-if="allScenarios.get(scenario.id)" class="delta">
+              <dl v-if="store.scenarios.get(scenario.id)" class="delta">
                 <div
                   :class="{
-                    positive: allScenarios.get(scenario.id)!.delta.interest_saved > 0,
-                    negative: allScenarios.get(scenario.id)!.delta.interest_saved < 0,
+                    positive: store.scenarios.get(scenario.id)!.delta.interest_saved > 0,
+                    negative: store.scenarios.get(scenario.id)!.delta.interest_saved < 0,
                   }"
                 >
                   <dt>Interest delta</dt>
                   <dd>
-                    {{ fmtCents(allScenarios.get(scenario.id)!.delta.interest_saved) }}
+                    {{ fmtCents(store.scenarios.get(scenario.id)!.delta.interest_saved) }}
                   </dd>
                 </div>
                 <div
                   :class="{
-                    positive: allScenarios.get(scenario.id)!.delta.months_sooner > 0,
-                    negative: allScenarios.get(scenario.id)!.delta.months_sooner < 0,
+                    positive: store.scenarios.get(scenario.id)!.delta.months_sooner > 0,
+                    negative: store.scenarios.get(scenario.id)!.delta.months_sooner < 0,
                   }"
                 >
                   <dt>Payoff sooner</dt>
-                  <dd>{{ allScenarios.get(scenario.id)!.delta.months_sooner }} months</dd>
+                  <dd>{{ store.scenarios.get(scenario.id)!.delta.months_sooner }} months</dd>
                 </div>
               </dl>
-            </button>
+            </div>
           </li>
         </ul>
+        <p v-else class="readout empty"><em>No scenarios defined yet.</em></p>
       </aside>
     </section>
-
-    <footer>
-      <p class="caption">Demo data. To open your own <code>.loan.yaml</code>, wait for Phase 4.</p>
-    </footer>
   </main>
 </template>
 
@@ -153,8 +193,13 @@ main {
   font-family: var(--ll-font-sans);
 }
 
-header {
-  margin-bottom: 3rem;
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
 }
 
 h1 {
@@ -162,6 +207,91 @@ h1 {
   font-size: 1.953rem;
   font-weight: 500;
   margin: 0;
+}
+
+.source {
+  margin-top: 0.25rem;
+}
+
+.dirty {
+  color: var(--ll-mark);
+  margin-left: 0.5rem;
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+button {
+  font-family: var(--ll-font-sans);
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background 120ms,
+    border-color 120ms;
+}
+
+.primary {
+  background: var(--ll-accent);
+  color: #fff;
+  border: none;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--ll-accent-hover);
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondary {
+  background: transparent;
+  color: var(--ll-ink);
+  border: 1px solid var(--ll-ink-faint);
+}
+
+.secondary:hover {
+  border-color: var(--ll-ink);
+}
+
+.tertiary {
+  background: transparent;
+  color: var(--ll-ink-muted);
+  border: none;
+}
+
+.tertiary:hover {
+  color: var(--ll-ink);
+  text-decoration: underline;
+}
+
+.banner {
+  padding: 1rem 1.25rem;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+  font-size: 0.875rem;
+}
+
+.banner ul {
+  margin: 0.5rem 0 0;
+  padding: 0 0 0 1.25rem;
+}
+
+.banner code {
+  font-family: var(--ll-font-mono);
+  font-size: 0.8125rem;
+}
+
+.error-banner {
+  background: var(--ll-negative-soft);
+  color: var(--ll-negative);
 }
 
 .eyebrow,
@@ -199,12 +329,18 @@ h1 {
   line-height: 1.4;
 }
 
+.readout.empty {
+  font-size: 1rem;
+  color: var(--ll-ink-muted);
+}
+
 .summary {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 3rem;
   align-items: center;
   padding: 2rem 0 3rem;
+  border-top: 1px solid var(--ll-ink-faint);
   border-bottom: 1px solid var(--ll-ink-faint);
   margin-bottom: 3rem;
 }
@@ -241,28 +377,10 @@ h1 {
   gap: 1rem;
 }
 
-.scenarios li button {
-  width: 100%;
+.scenario-card {
   background: var(--ll-paper-sunk);
-  border: none;
-  border-left: 2px solid transparent;
   border-radius: 4px;
   padding: 1rem 1.25rem;
-  text-align: left;
-  cursor: pointer;
-  color: var(--ll-ink);
-  font-family: inherit;
-  transition:
-    border-color 120ms,
-    background 120ms;
-}
-
-.scenarios li button:hover {
-  border-left-color: var(--ll-ink-muted);
-}
-
-.scenarios li.active button {
-  border-left-color: var(--ll-mark);
 }
 
 .scenario-name {
@@ -312,20 +430,6 @@ h1 {
 
 .delta .negative dd {
   color: var(--ll-negative);
-}
-
-footer {
-  margin-top: 4rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--ll-ink-faint);
-}
-
-code {
-  font-family: var(--ll-font-mono);
-  font-size: 0.875rem;
-  background: var(--ll-paper-sunk);
-  padding: 0.1rem 0.35rem;
-  border-radius: 3px;
 }
 
 @media (width <= 900px) {
