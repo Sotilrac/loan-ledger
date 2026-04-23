@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { LoanComputation, ScenarioEvaluation } from '@loan-ledger/core';
 import { todayISO } from '@loan-ledger/core';
-import { computed } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useLoanStore } from '../stores/loan.js';
-import { chartFont, chartMargin, chartPalette } from './palette.js';
+import { chartMargin, chartPalette } from './palette.js';
 import { formatMonthLabel, formatShortCurrency, linearScale, niceTicks } from './scale.js';
 
 const props = defineProps<{
@@ -229,11 +229,60 @@ function onLeave() {
   // Intentionally do not clear selectedPeriod — we want the last-hovered row
   // and scroll position to stay put when the mouse leaves the chart.
 }
+
+// Default the selection to the current (today) period so the tooltip shows
+// meaningful numbers on first render — especially on mobile where there's no
+// hover to seed it. Re-seeds whenever the ledger length changes (new file
+// loaded) and the existing selection would point to a nonexistent row.
+function seedSelectionAtToday() {
+  const rows = props.computation.ledger;
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    if (rows[i]!.date <= today.value) {
+      store.setSelectedPeriod(rows[i]!.period);
+      return;
+    }
+  }
+}
+
+onMounted(() => {
+  if (store.selectedPeriod == null) seedSelectionAtToday();
+});
+
+watch(
+  () => props.computation.ledger.length,
+  () => {
+    const period = store.selectedPeriod;
+    if (period == null || period > props.computation.ledger.length) {
+      seedSelectionAtToday();
+    }
+  },
+);
 </script>
 
 <template>
   <figure class="chart">
     <figcaption class="label">Balance over time</figcaption>
+    <div v-if="hoverPoint" class="tooltip">
+      <p class="tooltip-date">{{ formatMonthLabel(hoverPoint.date) }}</p>
+      <dl>
+        <div>
+          <dt>Scheduled</dt>
+          <dd>{{ formatShortCurrency(hoverPoint.scheduled, props.currency) }}</dd>
+        </div>
+        <div v-if="hoverPoint.actual !== undefined">
+          <dt>Actual</dt>
+          <dd>{{ formatShortCurrency(hoverPoint.actual, props.currency) }}</dd>
+        </div>
+        <div v-if="isHoverFuture && currentStateAtHover !== null">
+          <dt>Current pace</dt>
+          <dd>{{ formatShortCurrency(currentStateAtHover, props.currency) }}</dd>
+        </div>
+        <div v-for="scen in scenariosAtHover" :key="scen.id">
+          <dt>{{ scen.name }}</dt>
+          <dd>{{ formatShortCurrency(scen.balance, props.currency) }}</dd>
+        </div>
+      </dl>
+    </div>
     <svg
       :viewBox="`0 0 ${width} ${height}`"
       role="img"
@@ -266,7 +315,7 @@ function onLeave() {
             :y="y(tick)"
             text-anchor="end"
             dominant-baseline="middle"
-            :style="chartFont.tick"
+            class="tick"
           >
             {{ formatShortCurrency(tick, props.currency) }}
           </text>
@@ -280,7 +329,7 @@ function onLeave() {
             :x="x(tick.i)"
             :y="plotH + 16"
             text-anchor="middle"
-            :style="chartFont.tick"
+            class="tick"
           >
             {{ formatMonthLabel(tick.date) }}
           </text>
@@ -305,7 +354,7 @@ function onLeave() {
           :stroke="chartPalette.annotation.rule"
           stroke-width="1"
         />
-        <text :x="todayX + 4" :y="10" :style="chartFont.annotation">today</text>
+        <text :x="todayX + 4" :y="10" class="annotation">today</text>
 
         <!-- Scheduled balance line: thin Ink Blue @ 0.7 -->
         <path
@@ -381,27 +430,6 @@ function onLeave() {
         </g>
       </g>
     </svg>
-    <div v-if="hoverPoint" class="tooltip">
-      <p class="tooltip-date">{{ formatMonthLabel(hoverPoint.date) }}</p>
-      <dl>
-        <div>
-          <dt>Scheduled</dt>
-          <dd>{{ formatShortCurrency(hoverPoint.scheduled, props.currency) }}</dd>
-        </div>
-        <div v-if="hoverPoint.actual !== undefined">
-          <dt>Actual</dt>
-          <dd>{{ formatShortCurrency(hoverPoint.actual, props.currency) }}</dd>
-        </div>
-        <div v-if="isHoverFuture && currentStateAtHover !== null">
-          <dt>Current pace</dt>
-          <dd>{{ formatShortCurrency(currentStateAtHover, props.currency) }}</dd>
-        </div>
-        <div v-for="scen in scenariosAtHover" :key="scen.id">
-          <dt>{{ scen.name }}</dt>
-          <dd>{{ formatShortCurrency(scen.balance, props.currency) }}</dd>
-        </div>
-      </dl>
-    </div>
   </figure>
 </template>
 
@@ -409,6 +437,8 @@ function onLeave() {
 .chart {
   margin: 0;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .label {
@@ -423,9 +453,36 @@ function onLeave() {
 
 svg {
   width: 100%;
-  height: 100%;
+  height: auto;
   display: block;
   cursor: crosshair;
+}
+
+.tick {
+  font-family: var(--ll-font-sans);
+  font-size: 0.5rem;
+  fill: var(--ll-ink-muted);
+  font-feature-settings:
+    'tnum' 1,
+    'lnum' 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.annotation {
+  font-family: var(--ll-font-serif);
+  font-size: 0.6875rem;
+  font-style: italic;
+  fill: var(--ll-ink-muted);
+}
+
+@media (width < 900px) {
+  .tick {
+    font-size: 0.75rem;
+  }
+
+  .annotation {
+    font-size: 0.875rem;
+  }
 }
 
 .tooltip {
@@ -438,6 +495,30 @@ svg {
   box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
   pointer-events: none;
   font-family: var(--ll-font-sans);
+}
+
+/* On narrow viewports the tooltip sits *above* the chart instead of overlaying
+  it, the DOM already has it between the caption and the SVG, so switching
+  to static positioning is enough. */
+@media (width < 900px) {
+  .tooltip {
+    position: static;
+    min-width: 0;
+    margin: 0 0 0.5rem;
+    padding: 0.5rem 0.75rem;
+    box-shadow: none;
+    background: var(--ll-paper-sunk);
+  }
+
+  .tooltip dl {
+    grid-auto-flow: column;
+    grid-template-columns: repeat(auto-fit, minmax(80px, max-content));
+  }
+
+  .tooltip-date {
+    font-size: 0.8125rem;
+    margin: 0 0 0.25rem;
+  }
 }
 
 .tooltip-date {

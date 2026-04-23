@@ -91,10 +91,18 @@ function onHover(period: number | null) {
   if (period != null) store.setSelectedPeriod(period);
 }
 
+function tableScrollsInternally(): boolean {
+  // On narrow viewports the amortization table is laid out full-length and the
+  // page scrolls as a whole. In that mode we don't want auto-scroll-on-hover
+  // yanking the page around.
+  if (typeof window === 'undefined') return true;
+  return window.innerWidth >= 900;
+}
+
 watch(
   () => store.selectedPeriod,
   (period) => {
-    if (period == null || !tbody.value) return;
+    if (period == null || !tbody.value || !tableScrollsInternally()) return;
     const row = tbody.value.querySelector(`[data-period="${period}"]`);
     if (row && typeof (row as Element).scrollIntoView === 'function') {
       (row as Element).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -106,7 +114,7 @@ watch(
   () => [props.computation.ledger.length, store.today],
   () => {
     requestAnimationFrame(() => {
-      if (!tbody.value) return;
+      if (!tbody.value || !tableScrollsInternally()) return;
       const todayRow = tbody.value.querySelector('.today-marker');
       if (todayRow && typeof (todayRow as Element).scrollIntoView === 'function') {
         (todayRow as Element).scrollIntoView({ block: 'center' });
@@ -372,6 +380,7 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
   margin: 0;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
   height: 100%;
 }
@@ -450,10 +459,57 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
 
 .scroll {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
   border-top: 1px solid var(--ll-ink-faint);
   border-bottom: 1px solid var(--ll-ink-faint);
+}
+
+@media (width < 900px) {
+  .scroll {
+    max-height: none;
+    overflow-x: auto;
+    border-bottom: none;
+  }
+
+  /* Let columns size to their content instead of the desktop fixed layout. */
+  table {
+    table-layout: auto;
+    min-width: 0;
+    width: max-content;
+  }
+
+  thead th:nth-child(1),
+  thead th:nth-child(2),
+  thead th:nth-child(3),
+  thead th:nth-child(4),
+  thead th:nth-child(5),
+  thead th:nth-child(6),
+  thead th:nth-child(7),
+  thead th.bar-col {
+    width: auto;
+  }
+
+  thead th.bar-col,
+  tbody td.bar-col {
+    min-width: 80px;
+  }
+}
+
+@media (width < 520px) {
+  table {
+    font-size: 0.75rem;
+  }
+
+  thead th {
+    font-size: 0.625rem;
+    padding: 0.375rem 0.25rem;
+  }
+
+  tbody td {
+    padding: 0.25rem;
+  }
 }
 
 table {

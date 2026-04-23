@@ -35,11 +35,13 @@ async function onFileChosen(event: Event) {
 
 <template>
   <div class="picker">
-    <button v-if="store.fsaAvailable" type="button" class="primary" @click="openViaFSA">
+    <button
+      type="button"
+      class="primary"
+      @click="store.fsaAvailable ? openViaFSA() : openFallback()"
+    >
       Load loan
     </button>
-    <button v-else type="button" class="primary" @click="openFallback">Load loan</button>
-    <button type="button" class="tertiary" @click="store.loadDemo">Use demo data</button>
     <input
       ref="fileInput"
       type="file"
@@ -60,8 +62,8 @@ async function onFileChosen(event: Event) {
 
 button {
   font-family: var(--ll-font-sans);
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.875rem;
   border-radius: 4px;
   cursor: pointer;
   transition:
@@ -72,23 +74,12 @@ button {
 .primary {
   background: var(--ll-accent);
   color: #fff;
-  border: none;
+  border: 1px solid var(--ll-accent);
 }
 
 .primary:hover {
   background: var(--ll-accent-hover);
-}
-
-.tertiary {
-  background: transparent;
-  color: var(--ll-ink-soft);
-  border: none;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.tertiary:hover {
-  color: var(--ll-ink);
+  border-color: var(--ll-accent-hover);
 }
 
 .error {

@@ -98,7 +98,7 @@ function removeScenario(id: string) {
       <div class="controls">
         <FilePicker />
         <button v-if="!store.isEditing" class="secondary" type="button" @click="store.startEditing">
-          Edit loan
+          Edit
         </button>
         <button v-if="!store.isEditing" class="secondary" type="button" @click="importOpen = true">
           Import payments
@@ -117,7 +117,10 @@ function removeScenario(id: string) {
           Save to file
         </button>
         <button v-if="!store.isEditing" class="secondary" type="button" @click="store.downloadYaml">
-          Save loan
+          Save
+        </button>
+        <button v-if="!store.isEditing" class="tertiary" type="button" @click="store.loadDemo">
+          Use demo data
         </button>
       </div>
     </header>
@@ -335,6 +338,17 @@ function removeScenario(id: string) {
     </template>
 
     <CsvImportDialog :open="importOpen" @close="importOpen = false" />
+
+    <aside class="attribution" aria-label="Attribution">
+      <span class="attribution-line">
+        <a href="https://gitlab.com/sotilrac/loan-ledger" target="_blank" rel="noopener noreferrer">
+          View source
+        </a>
+        <span class="sep">·</span>
+        by
+        <a href="https://asmat.ca" target="_blank" rel="noopener noreferrer">Carlos Asmat</a>
+      </span>
+    </aside>
   </main>
 </template>
 
@@ -415,7 +429,7 @@ button {
 .primary {
   background: var(--ll-accent);
   color: #fff;
-  border: none;
+  border: 1px solid var(--ll-accent);
 }
 
 .primary:hover:not(:disabled) {
@@ -440,12 +454,15 @@ button {
 .tertiary {
   background: transparent;
   color: var(--ll-ink-muted);
-  border: none;
+  border: 1px solid transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--ll-ink-faint);
 }
 
 .tertiary:hover {
   color: var(--ll-ink);
-  text-decoration: underline;
+  text-decoration-color: var(--ll-ink);
 }
 
 .banner {
@@ -564,9 +581,8 @@ button {
 }
 
 .balance-pane :deep(svg) {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: 100%;
+  width: 100%;
+  height: auto;
 }
 
 .scenarios {
@@ -691,6 +707,7 @@ button {
 
 .ledger {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -702,15 +719,53 @@ button {
   padding-bottom: 1rem;
 }
 
+/* Desktop: tag hanging off the right edge (like a garment hang-tag) */
+.attribution {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translate(50%, -50%) rotate(90deg);
+  transform-origin: 50% 50%;
+  background: var(--ll-paper-sunk);
+  border: 1px solid var(--ll-ink-faint);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  padding: 0.25rem 0.875rem;
+  white-space: nowrap;
+  pointer-events: auto;
+  box-shadow: 0 -1px 3px rgb(0 0 0 / 4%);
+}
+
+.attribution-line {
+  font-family: var(--ll-font-sans);
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  color: var(--ll-ink-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.attribution-line a {
+  color: var(--ll-ink-soft);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ll-ink-faint);
+}
+
+.attribution-line a:hover {
+  color: var(--ll-accent);
+  border-bottom-color: var(--ll-accent);
+}
+
+.sep {
+  color: var(--ll-ink-faint);
+}
+
 @media (width < 900px) {
   .app {
     height: auto;
     max-height: none;
     overflow: auto;
-  }
-
-  .summary {
-    grid-template-columns: 1fr;
   }
 
   .mid {
@@ -720,6 +775,79 @@ button {
 
   .ledger {
     flex: none;
+  }
+
+  /* On narrow screens the tag becomes a plain bottom footer */
+  .attribution {
+    position: static;
+    transform: none;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--ll-ink-faint);
+    border-radius: 0;
+    padding: 0.875rem 0;
+    margin-top: 1.5rem;
+    text-align: center;
+    box-shadow: none;
+  }
+
+  .attribution-line {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.375rem;
+  }
+}
+
+/* 360px and below: force summary facts into a tight 2-col grid and shrink text */
+@media (width < 520px) {
+  .app {
+    padding: 0.75rem clamp(0.5rem, 2vw, 1rem);
+    gap: 0.75rem;
+  }
+
+  h1 {
+    font-size: 1.25rem;
+  }
+
+  .summary {
+    grid-template-columns: 1fr;
+    padding: 0.75rem 0;
+    gap: 1rem;
+  }
+
+  .summary-gauge {
+    justify-content: flex-start;
+  }
+
+  .summary-gauge :deep(svg) {
+    max-width: 200px;
+  }
+
+  .summary-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 1rem;
+  }
+
+  .supporting {
+    font-size: 1.125rem;
+  }
+
+  .caption {
+    font-size: 0.6875rem;
+  }
+
+  .mid {
+    height: 320px;
+  }
+
+  .controls {
+    gap: 0.375rem;
+  }
+
+  .controls button {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
   }
 }
 </style>
