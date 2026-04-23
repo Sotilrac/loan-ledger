@@ -111,7 +111,7 @@ svg {
   font-family: var(--ll-font-serif);
   font-size: 32px;
   font-weight: 400;
-  fill: var(--ll-ink);
+  fill: var(--ll-accent);
   font-feature-settings:
     'tnum' 1,
     'lnum' 1;

@@ -36,7 +36,9 @@ loan-ledger/
 
 ## Using the browser app
 
-Visit the deployed URL (e.g. `https://loanledger.asmat.ca`). Open or create a `.loan.yaml` file. Your data never leaves your machine.
+Live preview: [https://sotilrac.gitlab.io/loan-ledger/](https://sotilrac.gitlab.io/loan-ledger/)
+
+Open or create a `.loan.yaml` file. Your data never leaves your machine.
 
 Browser compatibility:
 

@@ -4,6 +4,38 @@ import { useLoanStore } from '../stores/loan.js';
 
 const store = useLoanStore();
 
+function updateRateEntry(index: number, field: 'effective_date' | 'annual_rate', raw: string) {
+  store.updateDraft((d) => {
+    const entry = d.loan.rate_schedule[index];
+    if (!entry) return;
+    if (field === 'effective_date') entry.effective_date = raw;
+    else entry.annual_rate = Number(raw) / 100;
+  });
+}
+
+function addRateEntry() {
+  store.updateDraft((d) => {
+    const last = d.loan.rate_schedule[d.loan.rate_schedule.length - 1];
+    d.loan.rate_schedule.push({
+      effective_date: last?.effective_date ?? d.loan.start_date,
+      annual_rate: last?.annual_rate ?? d.loan.annual_rate,
+    });
+  });
+}
+
+function removeRateEntry(index: number) {
+  store.updateDraft((d) => {
+    if (d.loan.rate_schedule.length <= 1) return;
+    d.loan.rate_schedule.splice(index, 1);
+  });
+}
+
+function sortRateSchedule() {
+  store.updateDraft((d) => {
+    d.loan.rate_schedule.sort((a, b) => (a.effective_date < b.effective_date ? -1 : 1));
+  });
+}
+
 /** Write into the active draft. Safe because isEditing guarantees draft exists. */
 function updateProperty<K extends keyof NonNullable<typeof store.draft>['property']>(
   field: K,
@@ -196,8 +228,64 @@ const d = computed(() => store.draft);
         </div>
       </div>
     </fieldset>
+
+    <fieldset>
+      <legend class="label">Rate schedule</legend>
+      <table class="rate-table">
+        <thead>
+          <tr>
+            <th>Effective date</th>
+            <th class="num">Annual rate</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(entry, index) in d.loan.rate_schedule" :key="index">
+            <td>
+              <input
+                type="date"
+                :value="entry.effective_date"
+                @input="
+                  updateRateEntry(
+                    index,
+                    'effective_date',
+                    ($event.target as HTMLInputElement).value,
+                  )
+                "
+                @change="sortRateSchedule"
+              />
+            </td>
+            <td class="num">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="30"
+                :value="(entry.annual_rate * 100).toFixed(3)"
+                @input="
+                  updateRateEntry(index, 'annual_rate', ($event.target as HTMLInputElement).value)
+                "
+              />
+              <span class="suffix">%</span>
+            </td>
+            <td>
+              <button
+                type="button"
+                class="remove"
+                :disabled="d.loan.rate_schedule.length <= 1"
+                @click="removeRateEntry(index)"
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button type="button" class="add" @click="addRateEntry">+ Add rate entry</button>
+    </fieldset>
+
     <p class="note">
-      Rate schedule and payments are edited elsewhere. Derived values (equity, projected payoff,
+      Payments are edited via CSV import (Phase 6). Derived values (equity, projected payoff,
       schedule rows) update live as you type.
     </p>
   </form>
@@ -280,5 +368,79 @@ select:focus {
   font-size: 0.875rem;
   color: var(--ll-ink-muted);
   margin: 0;
+}
+
+.rate-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--ll-font-sans);
+  font-size: 0.875rem;
+}
+
+.rate-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ll-ink-muted);
+  padding: 0.5rem 0.5rem 0.5rem 0;
+}
+
+.rate-table td {
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  vertical-align: middle;
+}
+
+.rate-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rate-table .num input {
+  text-align: right;
+  max-width: 100px;
+}
+
+.rate-table .suffix {
+  color: var(--ll-ink-muted);
+  font-size: 0.875rem;
+  padding-left: 0.25rem;
+}
+
+button.add {
+  margin-top: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--ll-accent);
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+button.add:hover {
+  color: var(--ll-accent-hover);
+  text-decoration: underline;
+}
+
+button.remove {
+  background: transparent;
+  border: none;
+  color: var(--ll-negative);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+}
+
+button.remove:hover:not(:disabled) {
+  background: var(--ll-negative-soft);
+}
+
+button.remove:disabled {
+  color: var(--ll-ink-faint);
+  cursor: not-allowed;
 }
 </style>

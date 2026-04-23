@@ -15,6 +15,7 @@ stages:
   - install
   - check
   - build
+  - deploy
 
 .pnpm-cache: &pnpm-cache
   key:
@@ -88,3 +89,23 @@ build:
     paths:
       - packages/web/dist/
     expire_in: 14 days
+
+# Publishes the web bundle to GitLab Pages on every push to the default
+# branch. Served at https://<namespace>.gitlab.io/loan-ledger/ — relative
+# asset paths in the build keep it working regardless of the subpath.
+pages:
+  stage: deploy
+  needs: [build]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  cache:
+    <<: *pnpm-cache
+    policy: pull
+  <<: *setup
+  script:
+    - pnpm build
+    - rm -rf public
+    - mv packages/web/dist public
+  artifacts:
+    paths:
+      - public

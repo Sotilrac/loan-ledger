@@ -3,6 +3,9 @@ import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  // Relative base so the bundle works at any subpath (e.g. GitLab Pages
+  // serves us from /loan-ledger/).
+  base: './',
   plugins: [vue()],
   resolve: {
     alias: {
