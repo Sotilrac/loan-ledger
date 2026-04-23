@@ -515,7 +515,7 @@ svg {
   background: var(--ll-paper-raised);
   padding: 0.75rem 1rem;
   min-width: 160px;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
+  box-shadow: 0 2px 8px rgb(var(--ll-shadow-rgb) / 6%);
   pointer-events: none;
   font-family: var(--ll-font-sans);
 }

@@ -585,7 +585,7 @@ tbody tr {
 
   /* Enough to clear both the sticky thead (~2rem) and the sticky year header
     (~1.5rem) so scrollIntoView doesn't tuck the target under them. */
-  scroll-margin-top: 3.75rem;
+  scroll-margin-top: 3.55rem;
   scroll-margin-bottom: 8px;
 }
 

@@ -26,6 +26,9 @@
   --ll-positive-soft: #e4ede6;
   --ll-negative-soft: #f2e1dd;
 
+  /* Drop-shadow base — flipped in dark mode so shadows read as lifts, not holes. */
+  --ll-shadow-rgb: 0 0 0;
+
   /* Typography */
   --ll-font-serif:
     'Source Serif 4', 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia,
@@ -57,6 +60,8 @@
     --ll-negative: #c28070;
     --ll-positive-soft: #1f2e25;
     --ll-negative-soft: #2e201c;
+
+    --ll-shadow-rgb: 255 255 255;
   }
 }
 
@@ -105,7 +110,7 @@ body {
   white-space: pre-line;
   overflow-wrap: break-word;
   border-radius: 3px;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+  box-shadow: 0 2px 8px rgb(var(--ll-shadow-rgb) / 15%);
   pointer-events: none;
   animation: tooltip-fade-in 120ms ease-out;
   transform: translateX(-50%);

@@ -341,7 +341,7 @@ const fmt = (n: number): string =>
   background: var(--ll-paper-raised);
   color: var(--ll-ink);
   font-family: var(--ll-font-sans);
-  box-shadow: 0 8px 32px rgb(0 0 0 / 12%);
+  box-shadow: 0 8px 32px rgb(var(--ll-shadow-rgb) / 12%);
 }
 
 .import-dialog::backdrop {
