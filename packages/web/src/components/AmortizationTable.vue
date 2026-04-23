@@ -60,6 +60,20 @@ function barWidthPct(row: LedgerRow): string {
   return `${(total / maxTotal.value) * 100}%`;
 }
 
+function barTooltip(row: LedgerRow): string {
+  const s = segmentsFor(row);
+  if (s.total <= 0) return '';
+  const pct = (v: number): string => `${((v / s.total) * 100).toFixed(1)}%`;
+  const lines = [
+    `Total ${fmtMoney(s.total)}`,
+    `Principal ${fmtMoney(s.principal)} (${pct(s.principal)})`,
+    `Interest ${fmtMoney(s.interest)} (${pct(s.interest)})`,
+  ];
+  if (s.escrow > 0) lines.push(`Escrow ${fmtMoney(s.escrow)} (${pct(s.escrow)})`);
+  if (s.extra > 0) lines.push(`Extra ${fmtMoney(s.extra)} (${pct(s.extra)})`);
+  return lines.join('\n');
+}
+
 function rowClass(row: LedgerRow): Record<string, boolean> {
   const isPast = row.date <= store.today;
   return {
@@ -179,12 +193,8 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
                 {{ fmtMoney(row.actual?.balance_after ?? row.scheduled.balance_after) }}
               </td>
               <td class="bar-col">
-                <div class="bar-track">
-                  <div
-                    class="bar"
-                    :style="{ width: barWidthPct(row) }"
-                    :title="`Total ${fmtMoney(segmentsFor(row).total)}`"
-                  >
+                <div class="bar-track" :title="barTooltip(row)">
+                  <div class="bar" :style="{ width: barWidthPct(row) }">
                     <span class="seg principal" :style="{ flex: segmentsFor(row).principal }" />
                     <span class="seg interest" :style="{ flex: segmentsFor(row).interest }" />
                     <span class="seg escrow" :style="{ flex: segmentsFor(row).escrow }" />

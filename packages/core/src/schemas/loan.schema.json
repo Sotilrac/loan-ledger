@@ -49,6 +49,10 @@
           "type": "array",
           "items": { "type": "string" }
         },
+        "links": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/propertyLink" }
+        },
         "notes": { "type": "string" }
       }
     },
@@ -126,6 +130,15 @@
         "end_date": { "$ref": "#/$defs/dateString" },
         "amount": { "type": "number", "exclusiveMinimum": 0 },
         "note": { "type": "string" }
+      }
+    },
+    "propertyLink": {
+      "type": "object",
+      "required": ["label", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" }
       }
     },
     "payment": {

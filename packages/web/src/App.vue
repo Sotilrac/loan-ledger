@@ -8,7 +8,6 @@ import CsvImportDialog from './components/CsvImportDialog.vue';
 import FilePicker from './components/FilePicker.vue';
 import LoanEditForm from './components/LoanEditForm.vue';
 import ScenarioEditor from './components/ScenarioEditor.vue';
-import ValuationRefresh from './components/ValuationRefresh.vue';
 import { useLoanStore } from './stores/loan.js';
 
 const store = useLoanStore();
@@ -83,6 +82,17 @@ function removeScenario(id: string) {
         <p class="eyebrow">Loan Ledger</p>
         <h1>{{ store.activeLoan.property.name }}</h1>
         <p class="source caption">{{ sourceLabel }}</p>
+        <p v-if="(store.activeLoan.property.links ?? []).length" class="property-links">
+          <a
+            v-for="link in store.activeLoan.property.links"
+            :key="link.url"
+            :href="link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ link.label }}
+          </a>
+        </p>
       </div>
       <div class="controls">
         <FilePicker />
@@ -164,7 +174,6 @@ function removeScenario(id: string) {
               {{ fmtCents(store.activeLoan.valuation.current.amount) }}
             </p>
             <p class="caption">As of {{ store.activeLoan.valuation.current.as_of }}</p>
-            <ValuationRefresh />
           </div>
           <div
             title="Scheduled principal-and-interest payment. Either derived from principal + rate + term, or overridden in Edit loan."
@@ -359,6 +368,25 @@ h1 {
 
 .source {
   margin-top: 0.125rem;
+}
+
+.property-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.property-links a {
+  color: var(--ll-accent);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ll-ink-faint);
+}
+
+.property-links a:hover {
+  color: var(--ll-accent-hover);
+  border-bottom-color: var(--ll-accent);
 }
 
 .controls {

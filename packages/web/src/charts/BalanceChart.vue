@@ -86,21 +86,21 @@ const actualPath = computed(() => pathFor((p) => p.actual, today.value));
 
 /**
  * "Continue as you are" projection: start from the current actual balance and
- * amortize forward using the contractual P+I (no future extras). Shown
- * dashed-Marigold so the user can compare it with the contractual scheduled
- * (Ink Blue) line and see the head-start their past extras have given them.
+ * amortize forward using the contractual P+I (no future extras). Stored as a
+ * per-ledger-index series so the hover tooltip can look up the projected
+ * balance at any future point.
  */
-const currentStatePath = computed<string>(() => {
+const currentStateSeries = computed<{ index: number; balance: number }[]>(() => {
   const rows = props.computation.ledger;
-  if (!rows.length) return '';
+  if (!rows.length) return [];
   const startIdx = rows.findIndex((r) => r.date > today.value);
-  if (startIdx < 0) return ''; // loan already paid off / all past
+  if (startIdx < 0) return [];
   const prevIdx = Math.max(0, startIdx - 1);
   const lastActualBalance =
     rows[prevIdx]?.actual?.balance_after ?? rows[prevIdx]?.scheduled.balance_after ?? 0;
 
-  const coords: { x: number; y: number }[] = [
-    { x: x.value(prevIdx), y: y.value(lastActualBalance) },
+  const series: { index: number; balance: number }[] = [
+    { index: prevIdx, balance: lastActualBalance },
   ];
   let bal = lastActualBalance;
   for (let i = startIdx; i < rows.length; i += 1) {
@@ -109,11 +109,21 @@ const currentStatePath = computed<string>(() => {
     const interest = Math.round(bal * monthlyRate * 100) / 100;
     const principal = Math.max(0, row.scheduled.payment - interest);
     bal = Math.max(0, bal - principal);
-    coords.push({ x: x.value(i), y: y.value(bal) });
+    series.push({ index: i, balance: bal });
     if (bal <= 0) break;
   }
-  return coords.map((c, i) => (i === 0 ? `M${c.x},${c.y}` : `L${c.x},${c.y}`)).join(' ');
+  return series;
 });
+
+const currentStatePath = computed<string>(() =>
+  currentStateSeries.value
+    .map((s, i) => {
+      const px = x.value(s.index);
+      const py = y.value(s.balance);
+      return i === 0 ? `M${px},${py}` : `L${px},${py}`;
+    })
+    .join(' '),
+);
 
 /**
  * Alternating-year background bands. Every other year gets a subtle
@@ -166,6 +176,37 @@ const store = useLoanStore();
 const hoverPoint = computed(() => {
   if (store.selectedPeriod == null) return null;
   return points.value[store.selectedPeriod - 1] ?? null;
+});
+
+const isHoverFuture = computed(() => {
+  if (!hoverPoint.value) return false;
+  return hoverPoint.value.date > today.value;
+});
+
+/** Projected balance on the "current pace" line at the hovered period. */
+const currentStateAtHover = computed<number | null>(() => {
+  if (!hoverPoint.value) return null;
+  const idx = hoverPoint.value.x;
+  const entry = currentStateSeries.value.find((s) => s.index === idx);
+  return entry?.balance ?? null;
+});
+
+/** Scenario balances at the hovered period, keyed by scenario id. */
+const scenariosAtHover = computed<{ id: string; name: string; balance: number }[]>(() => {
+  if (!hoverPoint.value || !props.scenarios) return [];
+  const idx = hoverPoint.value.x;
+  const defs = store.activeLoan.scenarios ?? [];
+  const out: { id: string; name: string; balance: number }[] = [];
+  for (const [id, ev] of props.scenarios) {
+    const row = ev.scenario.ledger[idx];
+    if (!row) continue;
+    out.push({
+      id,
+      name: defs.find((s) => s.id === id)?.name ?? id,
+      balance: row.actual?.balance_after ?? row.scheduled.balance_after,
+    });
+  }
+  return out;
 });
 
 function onMove(event: MouseEvent) {
@@ -349,6 +390,14 @@ function onLeave() {
         <div v-if="hoverPoint.actual !== undefined">
           <dt>Actual</dt>
           <dd>{{ formatShortCurrency(hoverPoint.actual, props.currency) }}</dd>
+        </div>
+        <div v-if="isHoverFuture && currentStateAtHover !== null">
+          <dt>Current pace</dt>
+          <dd>{{ formatShortCurrency(currentStateAtHover, props.currency) }}</dd>
+        </div>
+        <div v-for="scen in scenariosAtHover" :key="scen.id">
+          <dt>{{ scen.name }}</dt>
+          <dd>{{ formatShortCurrency(scen.balance, props.currency) }}</dd>
         </div>
       </dl>
     </div>

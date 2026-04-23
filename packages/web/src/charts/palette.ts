@@ -50,7 +50,7 @@ export const chartMargin = {
 export const chartFont = {
   microLabel: {
     fontFamily: 'var(--ll-font-sans)',
-    fontSize: '0.625rem',
+    fontSize: '0.5625rem',
     fontWeight: 500,
     letterSpacing: '0.08em',
     textTransform: 'uppercase' as const,
@@ -58,7 +58,7 @@ export const chartFont = {
   },
   tick: {
     fontFamily: 'var(--ll-font-sans)',
-    fontSize: '0.625rem',
+    fontSize: '0.5625rem',
     fill: 'var(--ll-ink-muted)',
     fontFeatureSettings: '"tnum" 1, "lnum" 1',
   },

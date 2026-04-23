@@ -12,6 +12,11 @@ export interface RateScheduleEntry {
   annual_rate: number;
 }
 
+export interface PropertyLink {
+  label: string;
+  url: string;
+}
+
 export interface Property {
   name: string;
   purchase_date: DateString;
@@ -24,6 +29,7 @@ export interface Property {
   square_feet?: number;
   lot_size_sqft?: number;
   features?: string[];
+  links?: PropertyLink[];
   notes?: string;
 }
 

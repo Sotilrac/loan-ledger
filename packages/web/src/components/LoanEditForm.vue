@@ -84,6 +84,29 @@ function updatePropertyArray(value: string) {
   });
 }
 
+function addLink() {
+  store.updateDraft((d) => {
+    const list = (d.property.links ??= []);
+    list.push({ label: '', url: '' });
+  });
+}
+
+function removeLink(index: number) {
+  store.updateDraft((d) => {
+    if (!d.property.links) return;
+    d.property.links.splice(index, 1);
+    if (d.property.links.length === 0) delete d.property.links;
+  });
+}
+
+function updateLink(index: number, field: 'label' | 'url', value: string) {
+  store.updateDraft((d) => {
+    const entry = d.property.links?.[index];
+    if (!entry) return;
+    entry[field] = value;
+  });
+}
+
 function updatePropertyOptional<
   K extends
     | 'address'
@@ -113,11 +136,15 @@ function updateProperty<K extends keyof NonNullable<typeof store.draft>['propert
   });
 }
 
-function updateValuation(field: 'amount' | 'as_of' | 'source', value: string | number) {
+function updateValuation(field: 'amount' | 'as_of', value: string | number) {
   store.updateDraft((d) => {
     if (field === 'amount') d.valuation.current.amount = Number(value);
     else if (field === 'as_of') d.valuation.current.as_of = String(value);
-    else if (field === 'source') d.valuation.current.source = value as 'manual' | 'custom_url';
+    // Valuation source is always manual — the UI no longer surfaces anything
+    // else, but we normalise existing files on edit so the serialized YAML
+    // stays clean.
+    d.valuation.current.source = 'manual';
+    delete d.valuation.current.url;
   });
 }
 
@@ -300,6 +327,41 @@ const d = computed(() => store.draft);
           @input="updatePropertyOptional('notes', ($event.target as HTMLInputElement).value)"
         />
       </div>
+
+      <p class="sub-label">Related links</p>
+      <table class="rate-table">
+        <thead>
+          <tr>
+            <th>Label</th>
+            <th>URL</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(link, i) in d.property.links ?? []" :key="i">
+            <td>
+              <input
+                type="text"
+                placeholder="Zillow"
+                :value="link.label"
+                @input="updateLink(i, 'label', ($event.target as HTMLInputElement).value)"
+              />
+            </td>
+            <td>
+              <input
+                type="url"
+                placeholder="https://…"
+                :value="link.url"
+                @input="updateLink(i, 'url', ($event.target as HTMLInputElement).value)"
+              />
+            </td>
+            <td>
+              <button type="button" class="remove" @click="removeLink(i)">Remove</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button type="button" class="add" @click="addLink">+ Add link</button>
     </fieldset>
 
     <fieldset>
@@ -323,17 +385,6 @@ const d = computed(() => store.draft);
             :value="d.valuation.current.as_of"
             @input="updateValuation('as_of', ($event.target as HTMLInputElement).value)"
           />
-        </div>
-        <div class="field">
-          <label for="val-source">Source</label>
-          <select
-            id="val-source"
-            :value="d.valuation.current.source"
-            @change="updateValuation('source', ($event.target as HTMLSelectElement).value)"
-          >
-            <option value="manual">Manual</option>
-            <option value="custom_url">Custom URL</option>
-          </select>
         </div>
       </div>
     </fieldset>
@@ -653,6 +704,15 @@ select:focus {
   font-size: 0.875rem;
   color: var(--ll-ink-muted);
   margin: 0 0 0.75rem;
+}
+
+.sub-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ll-ink-muted);
+  margin: 1rem 0 0.5rem;
 }
 
 .rate-table {
