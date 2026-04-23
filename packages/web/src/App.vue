@@ -218,15 +218,13 @@ async function onSave() {
 
     <CsvImportDialog :open="importOpen" @close="importOpen = false" />
 
-    <aside class="attribution" aria-label="Attribution">
-      <span class="attribution-line">
-        Updated {{ lastUpdatedYear }}
-        <span class="sep">·</span>
-        <a href="https://gitlab.com/sotilrac/loan-ledger" target="_blank" rel="noopener noreferrer">
-          View source
-        </a>
-      </span>
-    </aside>
+    <small class="attribution" aria-label="Attribution">
+      {{ lastUpdatedYear }}
+      <span class="sep">·</span>
+      <a href="https://gitlab.com/sotilrac/loan-ledger" target="_blank" rel="noopener noreferrer">
+        View source
+      </a>
+    </small>
   </main>
 </template>
 
