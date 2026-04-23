@@ -49,7 +49,7 @@ A minimal loan file:
 ```yaml
 schema_version: 1
 property:
-  name: "Primary residence"
+  name: 'Primary residence'
   purchase_date: 2020-06-15
   purchase_price: 500000
   currency: USD
@@ -103,11 +103,13 @@ Files failing schema validation still appear with a warning banner and a diff vi
 
 ### Environment
 
-Requires Node 20+ and pnpm 9+. The Nextcloud package additionally requires PHP 8.2+ and a local Nextcloud checkout to run against.
+Requires Node 24 LTS (pinned via `.nvmrc`) and pnpm 10+. The Nextcloud package additionally requires PHP 8.2+ and a local Nextcloud checkout to run against.
 
 ```bash
-git clone https://github.com/<user>/loan-ledger.git
+git clone https://gitlab.com/sotilrac/loan-ledger.git
 cd loan-ledger
+nvm use              # picks up Node 24 from .nvmrc
+corepack enable      # activates the pinned pnpm version
 pnpm install
 make install-hooks
 ```
@@ -170,29 +172,28 @@ cd packages/nextcloud && composer run cs:check
 The two targets version independently.
 
 ```bash
-git tag web-v0.1.0         # triggers release-web workflow
-git tag nc-v0.1.0          # triggers release-nextcloud workflow
+git tag web-v0.1.0         # triggers the release-web pipeline
+git tag nc-v0.1.0          # triggers the release-nextcloud pipeline
 git push --tags
 ```
 
-The `release-web` workflow builds `@loan-ledger/web` and deploys to the configured static host. The `release-nextcloud` workflow builds `@loan-ledger/nextcloud`, packages it per `.nextcloudignore`, uploads the archive to the GitHub release, and (if configured) pushes to the Nextcloud App Store.
+Release pipelines build `@loan-ledger/web` (static bundle to the configured host) and `@loan-ledger/nextcloud` (archive per `.nextcloudignore`, attached to the GitLab release and optionally pushed to the Nextcloud App Store).
 
 Both targets pin `@loan-ledger/core` via `workspace:*`, so the lockfile captures the exact core version used in each build.
 
 ## CI
 
-GitHub Actions workflows:
+GitLab CI, defined in `.gitlab-ci.yml`. Phase 0 pipeline:
 
-| Workflow | Scope |
-| --- | --- |
-| `ci-core` | typecheck, test, build for `@core` |
-| `ci-web` | typecheck, test, build for `@web`, PR preview deploys |
-| `ci-nextcloud-php` | lint-php, psalm, phpunit matrix (PHP 8.2–8.5 × Nextcloud stable31/32/33/master) |
-| `ci-nextcloud-js` | frontend checks for `@nextcloud` |
-| `release-web` | tag `web-v*` → deploy static bundle |
-| `release-nextcloud` | tag `nc-v*` → build archive + release + App Store push |
+| Stage   | Job         | Runs                                                    |
+| ------- | ----------- | ------------------------------------------------------- |
+| install | `install`   | `pnpm install --frozen-lockfile` (cached by lockfile)   |
+| check   | `lint`      | `pnpm lint` (ESLint, Prettier, Stylelint)               |
+| check   | `typecheck` | `pnpm typecheck` (`tsc` + `vue-tsc`)                    |
+| check   | `test`      | `pnpm test` (Vitest across all packages)                |
+| build   | `build`     | `pnpm build` → uploads `packages/web/dist/` as artifact |
 
-Branch protection on `main` requires `ci-core`, `ci-web`, `ci-nextcloud-php (stable33 / PHP 8.3)`, and `ci-nextcloud-js` to pass.
+The pipeline runs on every branch push and tag. A Nextcloud PHP matrix (PHP 8.2–8.5 × Nextcloud 31/32/33) gets added in Phase 7.
 
 ## Pre-commit hooks
 
@@ -212,10 +213,8 @@ git commit --no-verify       # emergency escape hatch
 
 ## Contributing
 
-Open an issue before opening a PR for anything larger than a small fix. Follow the coding standards (`make format` does most of the work). Use Conventional Commits. Scope commits to one package where possible (`feat(core): ...`, `fix(web): ...`, `feat(nextcloud): ...`).
-
-All PRs must pass CI and include tests for new behavior. Changes to `@loan-ledger/core` require corresponding fixture updates if they affect computed output.
+Follow the coding standards (`make format` does most of the work). Use Conventional Commits. Scope commits to one package where possible (`feat(core): ...`, `fix(web): ...`, `feat(nextcloud): ...`). Changes to `@loan-ledger/core` require corresponding fixture updates if they affect computed output.
 
 ## License
 
-AGPL-3.0-or-later. See [`LICENSE`](LICENSE).
+MIT. See [`LICENSE`](LICENSE).

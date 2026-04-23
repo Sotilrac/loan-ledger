@@ -1,0 +1,42 @@
+{
+  "name": "loan-ledger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Monorepo root for Loan Ledger (@loan-ledger/core, @loan-ledger/web, @loan-ledger/nextcloud).",
+  "license": "MIT",
+  "packageManager": "pnpm@10.33.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint && pnpm run lint:prettier && pnpm run lint:stylelint",
+    "lint:prettier": "prettier --check .",
+    "lint:stylelint": "stylelint \"packages/**/*.{css,vue}\" --allow-empty-input",
+    "format": "prettier --write . && pnpm -r exec eslint --fix .",
+    "dev": "pnpm --filter @loan-ledger/web dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@stylistic/eslint-plugin": "^3.0.0",
+    "@vue/eslint-config-typescript": "^14.2.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "prettier": "^3.4.2",
+    "stylelint": "^17.8.0",
+    "stylelint-config-standard": "^40.0.0",
+    "stylelint-config-standard-vue": "^1.0.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.20.0",
+    "vue-eslint-parser": "^10.4.0"
+  }
+}
