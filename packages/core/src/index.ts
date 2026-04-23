@@ -13,6 +13,13 @@ export {
 export { ingestCsv, type IngestOptions } from './io/csv.js';
 
 export { computeLoan } from './engine/loanEngine.js';
+export {
+  evaluateScenario,
+  evaluateAllScenarios,
+  type ScenarioDelta,
+  type ScenarioEvaluation,
+} from './engine/scenarioEngine.js';
+export { applyMutation, applyMutations } from './mutation/index.js';
 export { buildDemoLoan, DEMO_LOAN } from './demo.js';
 
 export {

@@ -1,0 +1,74 @@
+:root {
+  /* Paper */
+  --ll-paper: #faf7f2;
+  --ll-paper-sunk: #f3efe8;
+  --ll-paper-raised: #fff;
+
+  /* Ink */
+  --ll-ink: #1a1915;
+  --ll-ink-soft: #3d3b35;
+  --ll-ink-muted: #7a766d;
+  --ll-ink-faint: #b8b4aa;
+
+  /* Primary accent — Ink Blue */
+  --ll-accent: #1f3a5f;
+  --ll-accent-hover: #284a78;
+  --ll-accent-soft: #e3e8f0;
+
+  /* Secondary accent — Marigold */
+  --ll-mark: #d97e2b;
+  --ll-mark-hover: #b86820;
+  --ll-mark-soft: #f9e8d4;
+
+  /* Semantic */
+  --ll-positive: #3f6d4e;
+  --ll-negative: #8c3a2e;
+  --ll-positive-soft: #e4ede6;
+  --ll-negative-soft: #f2e1dd;
+
+  /* Typography */
+  --ll-font-serif:
+    'Source Serif 4', 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia,
+    serif;
+  --ll-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --ll-font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ll-paper: #16140f;
+    --ll-paper-sunk: #1f1d17;
+    --ll-paper-raised: #28251e;
+
+    --ll-ink: #f2eee5;
+    --ll-ink-soft: #d4cfc3;
+    --ll-ink-muted: #8e8a7f;
+    --ll-ink-faint: #4a4740;
+
+    --ll-accent: #7ba3d0;
+    --ll-accent-hover: #9bb8dd;
+    --ll-accent-soft: #1f2a3a;
+
+    --ll-mark: #e8a058;
+    --ll-mark-hover: #f0b574;
+    --ll-mark-soft: #3a2a18;
+
+    --ll-positive: #7ab091;
+    --ll-negative: #c28070;
+    --ll-positive-soft: #1f2e25;
+    --ll-negative-soft: #2e201c;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--ll-paper);
+  color: var(--ll-ink);
+  font-family: var(--ll-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  min-height: 100vh;
+}
