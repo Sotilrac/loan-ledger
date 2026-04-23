@@ -90,10 +90,10 @@ build:
       - packages/web/dist/
     expire_in: 14 days
 
-# Publishes the web bundle to GitLab Pages on every push to the default
-# branch. Served at https://<namespace>.gitlab.io/loan-ledger/ — relative
-# asset paths in the build keep it working regardless of the subpath.
-pages:
+# Deploy the web bundle to Cloudflare Pages on every push to the default
+# branch. Requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID as masked
+# CI variables.
+deploy:cloudflare:
   stage: deploy
   needs: [build]
   rules:
@@ -103,9 +103,4 @@ pages:
     policy: pull
   <<: *setup
   script:
-    - pnpm build
-    - rm -rf public
-    - mv packages/web/dist public
-  artifacts:
-    paths:
-      - public
+    - pnpm run deploy:pages

@@ -36,7 +36,7 @@ loan-ledger/
 
 ## Using the browser app
 
-Live preview: [https://sotilrac.gitlab.io/loan-ledger/](https://sotilrac.gitlab.io/loan-ledger/)
+Live preview: [https://loan-ledger.pages.dev/](https://loan-ledger.pages.dev/)
 
 Open or create a `.loan.yaml` file. Your data never leaves your machine.
 

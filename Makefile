@@ -1,4 +1,4 @@
-.PHONY: help install dev build test lint format typecheck install-hooks clean
+.PHONY: help install dev build test lint format typecheck install-hooks clean deploy
 
 help:
 	@echo "Loan Ledger — developer commands"
@@ -12,6 +12,7 @@ help:
 	@echo "  make typecheck      Typecheck all packages"
 	@echo "  make install-hooks  Install pre-commit hooks"
 	@echo "  make clean          Remove build output and caches"
+	@echo "  make deploy         Deploy @loan-ledger/web to Cloudflare Pages"
 
 install:
 	pnpm install
@@ -39,3 +40,6 @@ install-hooks:
 
 clean:
 	pnpm -r exec rm -rf dist coverage .vite
+
+deploy: build
+	pnpm run deploy:pages
