@@ -5,6 +5,9 @@ pnpm-lock.yaml
 **/.vite
 LICENSE
 
+# Tool-managed
+.claude/
+
 # Design docs — preserve the user's original formatting
 loan-ledger-plan.md
 style-guide.md

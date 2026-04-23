@@ -130,7 +130,7 @@ async function onSave() {
       <div class="layout-main">
         <BalanceChart
           :computation="store.computation"
-          :scenarios="store.scenarios"
+          :scenarios="store.activeScenarios"
           :today="store.today"
           :currency="currency"
         />
@@ -147,8 +147,17 @@ async function onSave() {
         <p class="readout"><em>What happens if you try something different?</em></p>
 
         <ul v-if="(store.activeLoan.scenarios ?? []).length">
-          <li v-for="scenario in store.activeLoan.scenarios ?? []" :key="scenario.id">
-            <div class="scenario-card">
+          <li
+            v-for="scenario in store.activeLoan.scenarios ?? []"
+            :key="scenario.id"
+            :class="{ active: store.activeScenarioId === scenario.id }"
+          >
+            <button
+              type="button"
+              class="scenario-card"
+              :aria-pressed="store.activeScenarioId === scenario.id"
+              @click="store.toggleScenario(scenario.id)"
+            >
               <p class="scenario-name">{{ scenario.name }}</p>
               <p v-if="scenario.description" class="scenario-desc">
                 {{ scenario.description }}
@@ -175,7 +184,7 @@ async function onSave() {
                   <dd>{{ store.scenarios.get(scenario.id)!.delta.months_sooner }} months</dd>
                 </div>
               </dl>
-            </div>
+            </button>
           </li>
         </ul>
         <p v-else class="readout empty"><em>No scenarios defined yet.</em></p>
@@ -378,9 +387,27 @@ button {
 }
 
 .scenario-card {
+  width: 100%;
   background: var(--ll-paper-sunk);
+  border: none;
+  border-left: 2px solid transparent;
   border-radius: 4px;
   padding: 1rem 1.25rem;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ll-ink);
+  font-family: inherit;
+  transition:
+    border-color 120ms,
+    background 120ms;
+}
+
+.scenario-card:hover {
+  border-left-color: var(--ll-ink-muted);
+}
+
+.scenarios li.active .scenario-card {
+  border-left-color: var(--ll-mark);
 }
 
 .scenario-name {
