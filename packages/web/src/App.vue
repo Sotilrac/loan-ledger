@@ -4,11 +4,15 @@ import BalanceChart from './charts/BalanceChart.vue';
 import CompositionChart from './charts/CompositionChart.vue';
 import EquityGauge from './charts/EquityGauge.vue';
 import AmortizationTable from './components/AmortizationTable.vue';
+import CsvImportDialog from './components/CsvImportDialog.vue';
 import FilePicker from './components/FilePicker.vue';
 import LoanEditForm from './components/LoanEditForm.vue';
+import ValuationRefresh from './components/ValuationRefresh.vue';
 import { useLoanStore } from './stores/loan.js';
+import { ref } from 'vue';
 
 const store = useLoanStore();
+const importOpen = ref(false);
 
 const currency = computed(() => store.activeLoan.property.currency);
 
@@ -53,18 +57,24 @@ async function onSave() {
         <button v-if="!store.isEditing" class="secondary" type="button" @click="store.startEditing">
           Edit loan
         </button>
+        <button v-if="!store.isEditing" class="secondary" type="button" @click="importOpen = true">
+          Import CSV
+        </button>
         <template v-else>
           <button class="primary" type="button" @click="store.commitEditing">Done editing</button>
           <button class="tertiary" type="button" @click="store.cancelEditing">Cancel</button>
         </template>
         <button
-          v-if="store.hasUnsavedChanges && !store.isEditing"
+          v-if="store.hasUnsavedChanges && store.canWriteToFile && !store.isEditing"
           class="primary"
           type="button"
           :disabled="store.saveState === 'saving'"
           @click="onSave"
         >
-          {{ store.canWriteToFile ? 'Save to file' : 'Download YAML' }}
+          Save to file
+        </button>
+        <button v-if="!store.isEditing" class="secondary" type="button" @click="store.downloadYaml">
+          Download YAML
         </button>
       </div>
     </header>
@@ -116,6 +126,14 @@ async function onSave() {
             Payoff projected {{ store.computation.summary.projected_payoff_date }}
           </p>
         </div>
+        <div>
+          <p class="label">Property value</p>
+          <p class="supporting">
+            {{ fmtCents(store.activeLoan.valuation.current.amount) }}
+          </p>
+          <p class="caption">As of {{ store.activeLoan.valuation.current.as_of }}</p>
+          <ValuationRefresh />
+        </div>
         <div v-if="store.computation.summary.months_ahead_of_schedule > 0">
           <p class="label">Ahead of schedule</p>
           <p class="supporting">{{ store.computation.summary.months_ahead_of_schedule }} months</p>
@@ -124,24 +142,6 @@ async function onSave() {
           </p>
         </div>
       </div>
-    </section>
-
-    <section class="layout">
-      <div class="layout-main">
-        <BalanceChart
-          :computation="store.computation"
-          :scenarios="store.activeScenarios"
-          :today="store.today"
-          :currency="currency"
-        />
-        <CompositionChart
-          :computation="store.computation"
-          :today="store.today"
-          :currency="currency"
-        />
-        <AmortizationTable :computation="store.computation" :currency="currency" />
-      </div>
-
       <aside class="scenarios">
         <p class="label">Scenarios</p>
         <p class="readout"><em>What happens if you try something different?</em></p>
@@ -190,12 +190,29 @@ async function onSave() {
         <p v-else class="readout empty"><em>No scenarios defined yet.</em></p>
       </aside>
     </section>
+
+    <section class="charts">
+      <BalanceChart
+        :computation="store.computation"
+        :scenarios="store.activeScenarios"
+        :today="store.today"
+        :currency="currency"
+      />
+      <CompositionChart
+        :computation="store.computation"
+        :today="store.today"
+        :currency="currency"
+      />
+      <AmortizationTable :computation="store.computation" :currency="currency" />
+    </section>
+
+    <CsvImportDialog :open="importOpen" @close="importOpen = false" />
   </main>
 </template>
 
 <style scoped>
 main {
-  max-width: 1120px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 3rem clamp(1rem, 2vw, 2rem);
   color: var(--ll-ink);
@@ -345,9 +362,9 @@ button {
 
 .summary {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 240px minmax(0, 1fr) minmax(260px, 320px);
   gap: 3rem;
-  align-items: center;
+  align-items: start;
   padding: 2rem 0 3rem;
   border-top: 1px solid var(--ll-ink-faint);
   border-bottom: 1px solid var(--ll-ink-faint);
@@ -357,33 +374,33 @@ button {
 .summary-gauge {
   display: flex;
   justify-content: center;
+  align-self: center;
 }
 
 .summary-facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1.5rem 2rem;
+  align-self: center;
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 3rem;
-}
-
-.layout-main {
+.charts {
   display: flex;
   flex-direction: column;
   gap: 3rem;
+}
+
+.scenarios {
+  min-width: 0;
 }
 
 .scenarios ul {
   list-style: none;
   padding: 0;
-  margin: 1.5rem 0 0;
+  margin: 1rem 0 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .scenario-card {

@@ -1,4 +1,4 @@
-import type { LoanComputation, LoanFile, ScenarioEvaluation } from '@loan-ledger/core';
+import type { LoanComputation, LoanFile, Payment, ScenarioEvaluation } from '@loan-ledger/core';
 import {
   DEMO_LOAN,
   buildDemoLoan,
@@ -167,6 +167,34 @@ export const useLoanStore = defineStore('loan', () => {
     activeScenarioId.value = activeScenarioId.value === id ? null : id;
   }
 
+  /**
+   * Merge imported payments into the current loan. Payments on the same date
+   * as an existing one are replaced (the import wins) — simplest-correct
+   * behaviour for re-importing the same month's statement.
+   */
+  function importPayments(imported: Payment[]): number {
+    if (imported.length === 0) return 0;
+    const byDate = new Map<string, Payment>();
+    for (const p of loan.value.payments ?? []) byDate.set(p.date, p);
+    for (const p of imported) byDate.set(p.date, p);
+    const merged = Array.from(byDate.values()).sort((a, b) => (a.date < b.date ? -1 : 1));
+    loan.value = { ...loan.value, payments: merged };
+    return imported.length;
+  }
+
+  /**
+   * Always-available export: writes the current loan YAML to a download,
+   * independent of whether a FSA handle is attached. Use this as "Save as".
+   */
+  function downloadYaml(): void {
+    if (isEditing.value) commitEditing();
+    const yaml = currentYaml.value;
+    const name = fileName.value.endsWith('.yaml')
+      ? fileName.value
+      : `${fileName.value.replace(/\.(yml|yaml)$/, '')}.loan.yaml`;
+    downloadText(name, yaml);
+  }
+
   return {
     // state
     loan,
@@ -199,7 +227,9 @@ export const useLoanStore = defineStore('loan', () => {
     commitEditing,
     updateDraft,
     save,
+    downloadYaml,
     setSelectedPeriod,
     toggleScenario,
+    importPayments,
   };
 });
