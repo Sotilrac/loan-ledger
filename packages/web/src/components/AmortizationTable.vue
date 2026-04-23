@@ -226,20 +226,20 @@ function deleteCurrent() {
       <p class="label">Amortization</p>
       <ul class="legend">
         <li
-          title="The portion of each payment that goes toward reducing the loan balance — your equity."
+          data-tooltip="The portion of each payment that goes toward reducing the loan balance — your equity."
         >
           <span class="swatch principal" /> <span class="term">Principal</span>
         </li>
-        <li title="The cost of borrowing. Paid to the lender; does not reduce the balance.">
+        <li data-tooltip="The cost of borrowing. Paid to the lender; does not reduce the balance.">
           <span class="swatch interest" /> <span class="term">Interest</span>
         </li>
         <li
-          title="A separate amount collected monthly and held by the lender to pay property taxes and homeowners insurance on your behalf."
+          data-tooltip="A separate amount collected monthly and held by the lender to pay property taxes and homeowners insurance on your behalf."
         >
           <span class="swatch escrow" /> <span class="term">Escrow</span>
         </li>
         <li
-          title="Any additional amount paid beyond the scheduled payment. Applied entirely to principal, so it accelerates payoff."
+          data-tooltip="Any additional amount paid beyond the scheduled payment. Applied entirely to principal, so it accelerates payoff."
         >
           <span class="swatch extra" /> <span class="term">Extra</span>
         </li>
@@ -281,7 +281,7 @@ function deleteCurrent() {
                   type="button"
                   class="row-edit-btn"
                   :aria-label="`Edit ${row.date}`"
-                  :title="row.actual ? 'Edit payment' : 'Add payment for this month'"
+                  :data-tooltip="row.actual ? 'Edit payment' : 'Add payment for this month'"
                   @click.stop="startEditPayment(row)"
                 >
                   <PhPencilSimple :size="12" weight="regular" />
@@ -298,7 +298,7 @@ function deleteCurrent() {
                 {{ fmtMoney(row.actual?.balance_after ?? row.scheduled.balance_after) }}
               </td>
               <td class="bar-col">
-                <div class="bar-track" :title="barTooltip(row)">
+                <div class="bar-track" :data-tooltip="barTooltip(row)">
                   <div class="bar" :style="{ width: barWidthPct(row) }">
                     <span class="seg principal" :style="{ flex: segmentsFor(row).principal }" />
                     <span class="seg interest" :style="{ flex: segmentsFor(row).interest }" />
@@ -805,8 +805,6 @@ tbody tr.selected .row-edit-btn {
 .bar-track {
   width: 100%;
   height: 10px;
-  border-radius: 2px;
-  overflow: hidden;
   background: transparent;
 }
 

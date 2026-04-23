@@ -244,7 +244,7 @@ const fmt = (n: number): string =>
           </div>
           <div
             class="field"
-            title="Map this column when the row represents extra principal above the scheduled payment."
+            data-tooltip="Map this column when the row represents extra principal above the scheduled payment."
           >
             <label for="extra-col">Extra column</label>
             <select id="extra-col" v-model="extraColumn">

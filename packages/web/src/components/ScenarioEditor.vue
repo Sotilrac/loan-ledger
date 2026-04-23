@@ -159,7 +159,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
         <input
           type="date"
           :value="m.start_date"
-          title="Start date"
+          data-tooltip="Start date"
           @input="
             updateMutationField(mIdx, 'start_date', ($event.target as HTMLInputElement).value)
           "
@@ -167,7 +167,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
         <input
           type="date"
           :value="m.end_date ?? ''"
-          title="End date (leave blank for forever)"
+          data-tooltip="End date (leave blank for forever)"
           @input="updateMutationField(mIdx, 'end_date', ($event.target as HTMLInputElement).value)"
         />
         <input
@@ -175,7 +175,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
           step="1"
           min="1"
           :value="m.amount"
-          title="Amount per month"
+          data-tooltip="Amount per month"
           @input="
             updateMutationField(mIdx, 'amount', Number(($event.target as HTMLInputElement).value))
           "
@@ -311,7 +311,7 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
           step="0.01"
           min="0"
           :value="m.with.amount"
-          title="Replacement amount"
+          data-tooltip="Replacement amount"
           @input="updateReplacePayment(mIdx, 'amount', ($event.target as HTMLInputElement).value)"
         />
       </template>
@@ -334,7 +334,12 @@ function updateReplacePayment(index: number, field: 'amount' | 'date', value: st
         <span class="suffix">%</span>
       </template>
 
-      <button type="button" class="remove-mutation" title="Remove" @click="removeMutation(mIdx)">
+      <button
+        type="button"
+        class="remove-mutation"
+        data-tooltip="Remove"
+        @click="removeMutation(mIdx)"
+      >
         ×
       </button>
     </div>

@@ -192,22 +192,28 @@ const currentStateAtHover = computed<number | null>(() => {
 });
 
 /** Scenario balances at the hovered period, keyed by scenario id. */
-const scenariosAtHover = computed<{ id: string; name: string; balance: number }[]>(() => {
-  if (!hoverPoint.value || !props.scenarios) return [];
-  const idx = hoverPoint.value.x;
-  const defs = store.activeLoan.scenarios ?? [];
-  const out: { id: string; name: string; balance: number }[] = [];
-  for (const [id, ev] of props.scenarios) {
-    const row = ev.scenario.ledger[idx];
-    if (!row) continue;
-    out.push({
-      id,
-      name: defs.find((s) => s.id === id)?.name ?? id,
-      balance: row.actual?.balance_after ?? row.scheduled.balance_after,
-    });
-  }
-  return out;
-});
+const scenariosAtHover = computed<{ id: string; name: string; balance: number; color: string }[]>(
+  () => {
+    if (!hoverPoint.value || !props.scenarios) return [];
+    const idx = hoverPoint.value.x;
+    const defs = store.activeLoan.scenarios ?? [];
+    const out: { id: string; name: string; balance: number; color: string }[] = [];
+    let i = 0;
+    for (const [id, ev] of props.scenarios) {
+      const row = ev.scenario.ledger[idx];
+      if (row) {
+        out.push({
+          id,
+          name: defs.find((s) => s.id === id)?.name ?? id,
+          balance: row.actual?.balance_after ?? row.scheduled.balance_after,
+          color: chartPalette.scenarios[i % chartPalette.scenarios.length]!,
+        });
+      }
+      i += 1;
+    }
+    return out;
+  },
+);
 
 function onMove(event: MouseEvent) {
   const svg = event.currentTarget as SVGSVGElement;
@@ -421,11 +427,28 @@ watch(
             :fill="chartPalette.actual.stroke"
           />
           <circle
+            v-if="currentStateAtHover !== null"
+            :cx="x(hoverPoint.x)"
+            :cy="y(currentStateAtHover)"
+            r="3"
+            :fill="chartPalette.actual.stroke"
+            fill-opacity="0.85"
+          />
+          <circle
             :cx="x(hoverPoint.x)"
             :cy="y(hoverPoint.scheduled)"
             r="2.5"
             :fill="chartPalette.scheduled.stroke"
             :fill-opacity="chartPalette.scheduled.opacity"
+          />
+          <circle
+            v-for="scen in scenariosAtHover"
+            :key="scen.id"
+            :cx="x(hoverPoint.x)"
+            :cy="y(scen.balance)"
+            r="3"
+            :fill="scen.color"
+            fill-opacity="0.85"
           />
         </g>
       </g>

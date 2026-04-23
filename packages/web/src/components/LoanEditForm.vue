@@ -464,7 +464,7 @@ const d = computed(() => store.draft);
         </div>
         <div
           class="field"
-          title="Overrides the computed P+I. Leave blank to let the amortization formula decide."
+          data-tooltip="Overrides the computed P+I. Leave blank to let the amortization formula decide."
         >
           <label for="monthly-payment">Monthly payment (P+I)</label>
           <input

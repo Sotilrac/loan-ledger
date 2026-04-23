@@ -160,7 +160,7 @@ async function onSave() {
             </p>
           </div>
           <div
-            title="Scheduled principal-and-interest payment. Either derived from principal + rate + term, or overridden in Edit loan."
+            data-tooltip="Scheduled principal-and-interest payment. Either derived from principal + rate + term, or overridden in Edit loan."
           >
             <p class="label">Monthly P+I</p>
             <p class="supporting">
@@ -172,7 +172,7 @@ async function onSave() {
           </div>
           <div
             v-if="store.activeLoan.loan.escrow_monthly > 0"
-            title="Portion of each monthly payment collected by the lender to cover property taxes and insurance."
+            data-tooltip="Portion of each monthly payment collected by the lender to cover property taxes and insurance."
           >
             <p class="label">Monthly escrow</p>
             <p class="supporting">{{ fmtCents(store.activeLoan.loan.escrow_monthly) }}</p>
@@ -188,7 +188,7 @@ async function onSave() {
           </div>
           <div
             v-if="store.interestSavedByExtras > 0"
-            title="Interest you didn't pay because your actual payments reduced the balance faster than the lender's scheduled path. (scheduled interest − actual interest, to date)"
+            data-tooltip="Interest you didn't pay because your actual payments reduced the balance faster than the lender's scheduled path. (scheduled interest − actual interest, to date)"
           >
             <p class="label">Interest saved so far</p>
             <p class="supporting positive">

@@ -52,7 +52,7 @@ function removeScenario(id: string) {
       <button
         type="button"
         class="icon-btn"
-        title="Add scenario"
+        data-tooltip="Add scenario"
         aria-label="Add scenario"
         @click="addScenario"
       >
@@ -88,7 +88,9 @@ function removeScenario(id: string) {
               <button
                 type="button"
                 class="icon-btn"
-                :title="store.editingScenarioId === scenario.id ? 'Close editor' : 'Edit scenario'"
+                :data-tooltip="
+                  store.editingScenarioId === scenario.id ? 'Close editor' : 'Edit scenario'
+                "
                 :aria-label="
                   store.editingScenarioId === scenario.id ? 'Close editor' : 'Edit scenario'
                 "
@@ -100,7 +102,7 @@ function removeScenario(id: string) {
               <button
                 type="button"
                 class="icon-btn danger"
-                title="Delete scenario"
+                data-tooltip="Delete scenario"
                 aria-label="Delete scenario"
                 @click.stop="removeScenario(scenario.id)"
               >
