@@ -179,7 +179,9 @@ const d = computed(() => store.draft);
           <label for="purchase-date">Purchase date</label>
           <input
             id="purchase-date"
-            type="date"
+            type="text"
+            pattern="\d{4}-\d{2}-\d{2}"
+            placeholder="YYYY-MM-DD"
             :value="d.property.purchase_date"
             @input="updateProperty('purchase_date', ($event.target as HTMLInputElement).value)"
           />
@@ -381,7 +383,9 @@ const d = computed(() => store.draft);
           <label for="val-date">As of</label>
           <input
             id="val-date"
-            type="date"
+            type="text"
+            pattern="\d{4}-\d{2}-\d{2}"
+            placeholder="YYYY-MM-DD"
             :value="d.valuation.current.as_of"
             @input="updateValuation('as_of', ($event.target as HTMLInputElement).value)"
           />
@@ -421,7 +425,9 @@ const d = computed(() => store.draft);
           <label for="start-date">Start date</label>
           <input
             id="start-date"
-            type="date"
+            type="text"
+            pattern="\d{4}-\d{2}-\d{2}"
+            placeholder="YYYY-MM-DD"
             :value="d.loan.start_date"
             @input="updateLoanField('start_date', ($event.target as HTMLInputElement).value)"
           />
@@ -430,7 +436,9 @@ const d = computed(() => store.draft);
           <label for="first-payment">First payment</label>
           <input
             id="first-payment"
-            type="date"
+            type="text"
+            pattern="\d{4}-\d{2}-\d{2}"
+            placeholder="YYYY-MM-DD"
             :value="d.loan.first_payment_date"
             @input="
               updateLoanField('first_payment_date', ($event.target as HTMLInputElement).value)
@@ -500,7 +508,9 @@ const d = computed(() => store.draft);
           <tr v-for="(entry, index) in d.loan.rate_schedule" :key="index">
             <td>
               <input
-                type="date"
+                type="text"
+                pattern="\d{4}-\d{2}-\d{2}"
+                placeholder="YYYY-MM-DD"
                 :value="entry.effective_date"
                 @input="
                   updateRateEntry(
@@ -561,7 +571,9 @@ const d = computed(() => store.draft);
           <tr v-for="(entry, index) in d.loan.scheduled_extras ?? []" :key="index">
             <td>
               <input
-                type="date"
+                type="text"
+                pattern="\d{4}-\d{2}-\d{2}"
+                placeholder="YYYY-MM-DD"
                 :value="entry.start_date"
                 @input="
                   updateExtraEntry(index, 'start_date', ($event.target as HTMLInputElement).value)
@@ -570,7 +582,9 @@ const d = computed(() => store.draft);
             </td>
             <td class="end-date-cell">
               <input
-                type="date"
+                type="text"
+                pattern="\d{4}-\d{2}-\d{2}"
+                placeholder="YYYY-MM-DD"
                 :value="entry.end_date ?? ''"
                 @input="
                   updateExtraEntry(index, 'end_date', ($event.target as HTMLInputElement).value)

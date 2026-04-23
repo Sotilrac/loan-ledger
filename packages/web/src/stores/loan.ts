@@ -216,6 +216,26 @@ export const useLoanStore = defineStore('loan', () => {
     return imported.length;
   }
 
+  /** Upsert a single payment by date. Replaces any existing entry with the same date. */
+  function upsertPayment(payment: Payment): void {
+    updateLoan((l) => {
+      const list = (l.payments ??= []);
+      const idx = list.findIndex((p) => p.date === payment.date);
+      if (idx >= 0) list[idx] = payment;
+      else list.push(payment);
+      list.sort((a, b) => (a.date < b.date ? -1 : 1));
+    });
+  }
+
+  function deletePayment(date: string): void {
+    updateLoan((l) => {
+      if (!l.payments) return;
+      const remaining = l.payments.filter((p) => p.date !== date);
+      if (remaining.length === 0) delete l.payments;
+      else l.payments = remaining;
+    });
+  }
+
   function mergePayments(a: Payment, b: Payment): Payment {
     const round2 = (n: number): number => Math.round(n * 100) / 100;
     const sum = (x: number | undefined, y: number | undefined): number | undefined => {
@@ -292,5 +312,7 @@ export const useLoanStore = defineStore('loan', () => {
     toggleEditingScenario,
     updateLoan,
     importPayments,
+    upsertPayment,
+    deletePayment,
   };
 });

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { LedgerRow, LoanComputation } from '@loan-ledger/core';
-import { computed, ref, watch } from 'vue';
+import type { LedgerRow, LoanComputation, Payment } from '@loan-ledger/core';
+import { PhPencilSimple, PhTrash, PhX } from '@phosphor-icons/vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { formatMonthLabel } from '../charts/scale.js';
 import { useLoanStore } from '../stores/loan.js';
 
@@ -84,7 +85,10 @@ function rowClass(row: LedgerRow): Record<string, boolean> {
 }
 
 function onHover(period: number | null) {
-  store.setSelectedPeriod(period);
+  // Ignore the null case — we only *update* the selection on enter, not on
+  // leave. That keeps the selection (and scroll) where it was after the
+  // mouse drifts off both the table and the chart.
+  if (period != null) store.setSelectedPeriod(period);
 }
 
 watch(
@@ -116,6 +120,76 @@ function showsTodayMarker(row: LedgerRow, idx: number): boolean {
   const prev = props.computation.ledger[idx - 1];
   if (!prev) return row.date > store.today;
   return prev.date <= store.today && row.date > store.today;
+}
+
+// --- Payment inline editor --------------------------------------------------
+
+const editingDate = ref<string | null>(null);
+const editForm = reactive({
+  amount: 0,
+  principal: '' as number | '',
+  interest: '' as number | '',
+  escrow: '' as number | '',
+  extra: '' as number | '',
+  note: '',
+});
+
+function existingPayment(date: string): Payment | undefined {
+  return store.activeLoan.payments?.find((p) => p.date === date);
+}
+
+function startEditPayment(row: LedgerRow) {
+  const p = existingPayment(row.date);
+  editingDate.value = row.date;
+  if (p) {
+    editForm.amount = p.amount;
+    editForm.principal = p.principal ?? '';
+    editForm.interest = p.interest ?? '';
+    editForm.escrow = p.escrow ?? '';
+    editForm.extra = p.extra ?? '';
+    editForm.note = p.note ?? '';
+  } else {
+    // New payment seeded from the scheduled values.
+    const s = row.scheduled;
+    editForm.amount = Math.round((s.payment + s.escrow) * 100) / 100;
+    editForm.principal = '';
+    editForm.interest = '';
+    editForm.escrow = '';
+    editForm.extra = '';
+    editForm.note = '';
+  }
+}
+
+function cancelEdit() {
+  editingDate.value = null;
+}
+
+function savePayment() {
+  if (!editingDate.value) return;
+  const payment: Payment = {
+    date: editingDate.value,
+    amount: Math.round(Number(editForm.amount) * 100) / 100,
+  };
+  const opt = (v: number | ''): number | undefined =>
+    v === '' || Number.isNaN(Number(v)) ? undefined : Math.round(Number(v) * 100) / 100;
+  const principal = opt(editForm.principal);
+  const interest = opt(editForm.interest);
+  const escrow = opt(editForm.escrow);
+  const extra = opt(editForm.extra);
+  if (principal !== undefined) payment.principal = principal;
+  if (interest !== undefined) payment.interest = interest;
+  if (escrow !== undefined) payment.escrow = escrow;
+  if (extra !== undefined) payment.extra = extra;
+  const note = editForm.note.trim();
+  if (note) payment.note = note;
+  store.upsertPayment(payment);
+  editingDate.value = null;
+}
+
+function deleteCurrent() {
+  if (!editingDate.value) return;
+  store.deletePayment(editingDate.value);
+  editingDate.value = null;
 }
 
 function showsYearDivider(row: LedgerRow, idx: number): boolean {
@@ -181,7 +255,18 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
               @mouseenter="onHover(row.period)"
               @mouseleave="onHover(null)"
             >
-              <td>{{ formatMonthLabel(row.date) }}</td>
+              <td class="date-cell">
+                <span class="date-text">{{ formatMonthLabel(row.date) }}</span>
+                <button
+                  type="button"
+                  class="row-edit-btn"
+                  :aria-label="`Edit ${row.date}`"
+                  :title="row.actual ? 'Edit payment' : 'Add payment for this month'"
+                  @click.stop="startEditPayment(row)"
+                >
+                  <PhPencilSimple :size="12" weight="regular" />
+                </button>
+              </td>
               <td class="period">{{ row.period }}</td>
               <td class="num">{{ fmtRate(row.rate) }}</td>
               <td class="num">
@@ -205,6 +290,74 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
                     />
                   </div>
                 </div>
+              </td>
+            </tr>
+            <tr v-if="editingDate === row.date" class="edit-row">
+              <td colspan="8">
+                <form class="payment-editor" @submit.prevent="savePayment">
+                  <p class="editor-title">
+                    {{ row.actual ? 'Edit payment' : 'Add payment' }} — {{ row.date }}
+                  </p>
+                  <div class="editor-grid">
+                    <label>
+                      <span>Amount</span>
+                      <input v-model.number="editForm.amount" type="number" step="0.01" min="0" />
+                    </label>
+                    <label>
+                      <span>Principal</span>
+                      <input
+                        v-model.number="editForm.principal"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="auto"
+                      />
+                    </label>
+                    <label>
+                      <span>Interest</span>
+                      <input
+                        v-model.number="editForm.interest"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="auto"
+                      />
+                    </label>
+                    <label>
+                      <span>Escrow</span>
+                      <input
+                        v-model.number="editForm.escrow"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="auto"
+                      />
+                    </label>
+                    <label>
+                      <span>Extra</span>
+                      <input
+                        v-model.number="editForm.extra"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0"
+                      />
+                    </label>
+                    <label class="grow">
+                      <span>Note</span>
+                      <input v-model="editForm.note" type="text" placeholder="optional" />
+                    </label>
+                  </div>
+                  <div class="editor-actions">
+                    <button type="submit" class="save">Save</button>
+                    <button v-if="row.actual" type="button" class="delete" @click="deleteCurrent">
+                      <PhTrash :size="12" weight="regular" /> Delete
+                    </button>
+                    <button type="button" class="cancel" @click="cancelEdit">
+                      <PhX :size="12" weight="regular" /> Cancel
+                    </button>
+                  </div>
+                </form>
               </td>
             </tr>
           </template>
@@ -424,6 +577,139 @@ tbody tr.selected {
   font-style: italic;
   font-size: 0.875rem;
   color: var(--ll-ink-muted);
+}
+
+/* Row edit icon */
+.date-cell {
+  position: relative;
+  white-space: nowrap;
+}
+
+.row-edit-btn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  padding: 0.125rem;
+  margin-left: 0.25rem;
+  color: var(--ll-ink-muted);
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 0;
+  transition:
+    opacity 80ms,
+    color 80ms;
+}
+
+tbody tr:hover .row-edit-btn,
+tbody tr.selected .row-edit-btn {
+  opacity: 1;
+}
+
+.row-edit-btn:hover {
+  color: var(--ll-accent);
+}
+
+/* Inline payment editor row */
+.edit-row td {
+  background: var(--ll-paper-sunk) !important;
+  padding: 0.75rem 1rem !important;
+  border-bottom: 2px solid var(--ll-ink-faint);
+}
+
+.payment-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.editor-title {
+  margin: 0;
+  font-family: var(--ll-font-serif);
+  font-size: 0.875rem;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.editor-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.6875rem;
+  color: var(--ll-ink-muted);
+  letter-spacing: 0.04em;
+}
+
+.editor-grid label.grow {
+  grid-column: span 2;
+}
+
+.editor-grid input {
+  font-family: var(--ll-font-sans);
+  font-size: 0.8125rem;
+  padding: 0.25rem 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--ll-ink-faint);
+  color: var(--ll-ink);
+  font-feature-settings:
+    'tnum' 1,
+    'lnum' 1;
+  font-variant-numeric: tabular-nums lining-nums;
+  min-width: 0;
+}
+
+.editor-grid input:focus {
+  outline: none;
+  border-bottom: 2px solid var(--ll-accent);
+  padding-bottom: calc(0.25rem - 1px);
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.editor-actions button {
+  font-family: var(--ll-font-sans);
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.editor-actions .save {
+  background: var(--ll-accent);
+  color: #fff;
+}
+
+.editor-actions .save:hover {
+  background: var(--ll-accent-hover);
+}
+
+.editor-actions .delete {
+  background: transparent;
+  color: var(--ll-negative);
+}
+
+.editor-actions .delete:hover {
+  background: var(--ll-negative-soft);
+}
+
+.editor-actions .cancel {
+  background: transparent;
+  color: var(--ll-ink-muted);
+}
+
+.editor-actions .cancel:hover {
+  color: var(--ll-ink);
 }
 
 /* Per-row composition bar */

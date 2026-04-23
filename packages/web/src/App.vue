@@ -3,6 +3,7 @@ import { PhPencilSimple, PhPlus, PhTrash, PhX } from '@phosphor-icons/vue';
 import { computed, ref } from 'vue';
 import BalanceChart from './charts/BalanceChart.vue';
 import EquityGauge from './charts/EquityGauge.vue';
+import { formatMonthLabel } from './charts/scale.js';
 import AmortizationTable from './components/AmortizationTable.vue';
 import CsvImportDialog from './components/CsvImportDialog.vue';
 import FilePicker from './components/FilePicker.vue';
@@ -166,14 +167,18 @@ function removeScenario(id: string) {
           <div>
             <p class="label">Current rate</p>
             <p class="supporting">{{ currentRateDisplay }}</p>
-            <p class="caption">Payoff {{ store.computation.summary.projected_payoff_date }}</p>
+            <p class="caption">
+              Payoff {{ formatMonthLabel(store.computation.summary.projected_payoff_date) }}
+            </p>
           </div>
           <div>
             <p class="label">Property value</p>
             <p class="supporting">
               {{ fmtCents(store.activeLoan.valuation.current.amount) }}
             </p>
-            <p class="caption">As of {{ store.activeLoan.valuation.current.as_of }}</p>
+            <p class="caption">
+              As of {{ formatMonthLabel(store.activeLoan.valuation.current.as_of) }}
+            </p>
           </div>
           <div
             title="Scheduled principal-and-interest payment. Either derived from principal + rate + term, or overridden in Edit loan."

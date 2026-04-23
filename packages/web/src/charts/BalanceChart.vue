@@ -226,7 +226,8 @@ function onMove(event: MouseEvent) {
 }
 
 function onLeave() {
-  store.setSelectedPeriod(null);
+  // Intentionally do not clear selectedPeriod — we want the last-hovered row
+  // and scroll position to stay put when the mouse leaves the chart.
 }
 </script>
 
@@ -265,7 +266,7 @@ function onLeave() {
             :y="y(tick)"
             text-anchor="end"
             dominant-baseline="middle"
-            v-bind="chartFont.tick"
+            :style="chartFont.tick"
           >
             {{ formatShortCurrency(tick, props.currency) }}
           </text>
@@ -279,7 +280,7 @@ function onLeave() {
             :x="x(tick.i)"
             :y="plotH + 16"
             text-anchor="middle"
-            v-bind="chartFont.tick"
+            :style="chartFont.tick"
           >
             {{ formatMonthLabel(tick.date) }}
           </text>
@@ -304,7 +305,7 @@ function onLeave() {
           :stroke="chartPalette.annotation.rule"
           stroke-width="1"
         />
-        <text :x="todayX + 4" :y="10" v-bind="chartFont.annotation">today</text>
+        <text :x="todayX + 4" :y="10" :style="chartFont.annotation">today</text>
 
         <!-- Scheduled balance line: thin Ink Blue @ 0.7 -->
         <path
