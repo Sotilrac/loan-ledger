@@ -473,10 +473,12 @@ function showsYearDivider(row: LedgerRow, idx: number): boolean {
     border-bottom: none;
   }
 
-  /* Let columns size to their content instead of the desktop fixed layout. */
+  /* Let columns size to their content instead of the desktop fixed layout,
+    and keep the table at least 800px wide so rows stay readable while the
+    container scrolls horizontally. */
   table {
     table-layout: auto;
-    min-width: 0;
+    min-width: 800px;
     width: max-content;
   }
 
