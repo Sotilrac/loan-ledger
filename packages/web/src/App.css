@@ -147,7 +147,7 @@ button {
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--ll-ink-faint);
+  color: var(--ll-ink-muted);
 }
 
 .eyebrow .by a {
@@ -255,20 +255,21 @@ button {
   font-family: var(--ll-font-sans);
   font-size: 0.6875rem;
   letter-spacing: 0.04em;
-  color: var(--ll-mark);
+  color: var(--ll-ink-muted);
   text-align: center;
-  padding: 0.5rem 0 0;
+  padding: 0.125rem 0 0;
+  line-height: 1;
 }
 
 .attribution a {
   color: inherit;
-  text-decoration: underline dotted var(--ll-mark-soft);
+  text-decoration: underline dotted var(--ll-ink-faint);
   text-underline-offset: 2px;
 }
 
 .attribution a:hover {
-  color: var(--ll-mark-hover);
-  text-decoration-color: var(--ll-mark-hover);
+  color: var(--ll-accent);
+  text-decoration-color: var(--ll-accent);
 }
 
 .sep {
