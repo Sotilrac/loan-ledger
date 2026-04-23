@@ -6,6 +6,10 @@ module.exports = {
     'custom-property-empty-line-before': null,
     'selector-class-pattern': null,
     'no-descending-specificity': null,
+    'selector-pseudo-class-no-unknown': [
+      true,
+      { ignorePseudoClasses: ['deep', 'slotted', 'global'] },
+    ],
     'declaration-empty-line-before': null,
     'value-keyword-case': [
       'lower',
