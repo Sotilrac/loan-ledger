@@ -15,6 +15,6 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Balance over time');
     expect(wrapper.text()).toContain('Amortization');
     expect(wrapper.text()).toContain('Scenarios');
-    expect(wrapper.text()).toContain('Edit loan');
+    expect(wrapper.text()).toContain('Import payments');
   });
 });
