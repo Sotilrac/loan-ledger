@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loanledger.dev/schemas/mappings.schema.json",
+  "title": "Loan Ledger — CSV mappings file",
+  "description": "Shared library of bank-CSV column mappings.",
+  "type": "object",
+  "required": ["schema_version", "mappings"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "mappings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mapping" }
+    }
+  },
+  "$defs": {
+    "mapping": {
+      "type": "object",
+      "required": ["name", "date_format", "columns"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "delimiter": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "date_format": { "type": "string", "minLength": 1 },
+        "amount_sign": { "enum": ["positive", "negative"] },
+        "skip_rows": { "type": "integer", "minimum": 0 },
+        "columns": {
+          "type": "object",
+          "required": ["date", "amount"],
+          "additionalProperties": false,
+          "properties": {
+            "date": { "type": "string", "minLength": 1 },
+            "amount": { "type": "string", "minLength": 1 },
+            "principal": { "type": "string", "minLength": 1 },
+            "interest": { "type": "string", "minLength": 1 },
+            "escrow": { "type": "string", "minLength": 1 },
+            "extra": { "type": "string", "minLength": 1 },
+            "note": { "type": "string", "minLength": 1 }
+          }
+        },
+        "filter": {
+          "type": "object",
+          "required": ["column", "matches"],
+          "additionalProperties": false,
+          "properties": {
+            "column": { "type": "string", "minLength": 1 },
+            "matches": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+schema_version: 1
+
+property:
+  name: 'Primary residence'
+  purchase_date: 2020-06-15
+  purchase_price: 500000
+  currency: USD
+
+valuation:
+  current:
+    amount: 650000
+    as_of: 2026-04-01
+    source: manual
+
+loan:
+  principal: 400000
+  annual_rate: 0.0325
+  term_months: 360
+  start_date: 2020-07-01
+  first_payment_date: 2020-08-01
+  payment_day: 1
+  escrow_monthly: 450
+  rate_schedule:
+    - effective_date: 2020-07-01
+      annual_rate: 0.0325
+
+payments:
+  - date: 2020-08-01
+    amount: 2190.65
+    note: 'first payment'
+  - date: 2020-09-01
+    amount: 2190.65
+  - date: 2020-10-01
+    amount: 2500.00
+    note: 'bumped by $309.35'
+
+scenarios:
+  - id: pay-down-fast
+    name: 'Extra $500/mo'
+    mutations:
+      - type: recurring_extra_principal
+        start_date: 2026-05-01
+        amount: 500

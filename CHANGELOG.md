@@ -15,5 +15,6 @@ Targets are versioned independently:
 ### Added
 
 - Monorepo scaffold: `@loan-ledger/core` and `@loan-ledger/web` workspace packages.
-- CI workflow: lint, typecheck, test, build on every PR.
-- Pre-commit hooks: prettier, eslint, stylelint, editorconfig-checker.
+- CI pipeline: lint, typecheck, test, build on every branch push (GitLab CI).
+- Lefthook pre-commit/pre-push hooks: prettier, eslint, stylelint, editorconfig-checker, typecheck, vitest.
+- `@loan-ledger/core` Phase 1: data model types, JSON Schemas (`loan.schema.json`, `mappings.schema.json`), `parseLoanYaml` / `serializeLoanYaml`, `parseMappingsYaml` / `serializeMappingsYaml`, `validateLoan` / `validateMappings` (ajv), `ingestCsv` (papaparse) with bank-CSV column mapping.

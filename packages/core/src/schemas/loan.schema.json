@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loanledger.dev/schemas/loan.schema.json",
+  "title": "Loan Ledger — loan file",
+  "description": "One loan, serialised as a .loan.yaml file.",
+  "type": "object",
+  "required": ["schema_version", "property", "valuation", "loan"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "property": { "$ref": "#/$defs/property" },
+    "valuation": { "$ref": "#/$defs/valuationBlock" },
+    "loan": { "$ref": "#/$defs/loanTerms" },
+    "payments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/payment" }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/scenario" }
+    }
+  },
+  "$defs": {
+    "dateString": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "property": {
+      "type": "object",
+      "required": ["name", "purchase_date", "purchase_price", "currency"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "purchase_date": { "$ref": "#/$defs/dateString" },
+        "purchase_price": { "type": "number", "exclusiveMinimum": 0 },
+        "currency": { "$ref": "#/$defs/currency" }
+      }
+    },
+    "valuation": {
+      "type": "object",
+      "required": ["amount", "as_of", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "amount": { "type": "number", "minimum": 0 },
+        "as_of": { "$ref": "#/$defs/dateString" },
+        "source": { "enum": ["manual", "custom_url"] },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "valuationBlock": {
+      "type": "object",
+      "required": ["current"],
+      "additionalProperties": false,
+      "properties": {
+        "current": { "$ref": "#/$defs/valuation" },
+        "history": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/valuation" }
+        }
+      }
+    },
+    "rateScheduleEntry": {
+      "type": "object",
+      "required": ["effective_date", "annual_rate"],
+      "additionalProperties": false,
+      "properties": {
+        "effective_date": { "$ref": "#/$defs/dateString" },
+        "annual_rate": { "type": "number", "minimum": 0 }
+      }
+    },
+    "loanTerms": {
+      "type": "object",
+      "required": [
+        "principal",
+        "annual_rate",
+        "term_months",
+        "start_date",
+        "first_payment_date",
+        "payment_day",
+        "escrow_monthly",
+        "rate_schedule"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "principal": { "type": "number", "exclusiveMinimum": 0 },
+        "annual_rate": { "type": "number", "minimum": 0 },
+        "term_months": { "type": "integer", "exclusiveMinimum": 0 },
+        "start_date": { "$ref": "#/$defs/dateString" },
+        "first_payment_date": { "$ref": "#/$defs/dateString" },
+        "payment_day": { "type": "integer", "minimum": 1, "maximum": 31 },
+        "escrow_monthly": { "type": "number", "minimum": 0 },
+        "rate_schedule": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/rateScheduleEntry" }
+        }
+      }
+    },
+    "payment": {
+      "type": "object",
+      "required": ["date", "amount"],
+      "additionalProperties": false,
+      "properties": {
+        "date": { "$ref": "#/$defs/dateString" },
+        "amount": { "type": "number" },
+        "principal": { "type": "number" },
+        "interest": { "type": "number" },
+        "escrow": { "type": "number" },
+        "extra": { "type": "number" },
+        "note": { "type": "string" }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "required": ["id", "name", "mutations"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "mutations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/mutation" }
+        }
+      }
+    },
+    "mutation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "start_date", "amount"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "recurring_extra_principal" },
+            "start_date": { "$ref": "#/$defs/dateString" },
+            "end_date": { "$ref": "#/$defs/dateString" },
+            "amount": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "date", "amount"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "one_time_extra" },
+            "date": { "$ref": "#/$defs/dateString" },
+            "amount": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "effective_date", "annual_rate"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "change_rate" },
+            "effective_date": { "$ref": "#/$defs/dateString" },
+            "annual_rate": { "type": "number", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "effective_date", "term_months"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "change_term" },
+            "effective_date": { "$ref": "#/$defs/dateString" },
+            "term_months": { "type": "integer", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "effective_date"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "stop_extra_payments" },
+            "effective_date": { "$ref": "#/$defs/dateString" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "effective_date", "escrow_monthly"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "change_escrow" },
+            "effective_date": { "$ref": "#/$defs/dateString" },
+            "escrow_monthly": { "type": "number", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "date"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "remove_payment" },
+            "date": { "$ref": "#/$defs/dateString" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "remove_payments_where" },
+            "note_contains": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "date", "with"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "replace_payment" },
+            "date": { "$ref": "#/$defs/dateString" },
+            "with": { "$ref": "#/$defs/payment" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "annual_rate"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "set_original_rate" },
+            "annual_rate": { "type": "number", "minimum": 0 }
+          }
+        }
+      ]
+    }
+  }
+}

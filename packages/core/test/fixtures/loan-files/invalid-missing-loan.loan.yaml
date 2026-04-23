@@ -1,0 +1,13 @@
+schema_version: 1
+
+property:
+  name: 'No loan block'
+  purchase_date: 2020-06-15
+  purchase_price: 500000
+  currency: USD
+
+valuation:
+  current:
+    amount: 650000
+    as_of: 2026-04-01
+    source: manual
