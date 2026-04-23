@@ -195,20 +195,19 @@ GitLab CI, defined in `.gitlab-ci.yml`. Phase 0 pipeline:
 
 The pipeline runs on every branch push and tag. A Nextcloud PHP matrix (PHP 8.2–8.5 × Nextcloud 31/32/33) gets added in Phase 7.
 
-## Pre-commit hooks
+## Git hooks
 
-Using [pre-commit.com](https://pre-commit.com). Install once:
+Using [Lefthook](https://lefthook.dev). Installed as a devDependency; activate the hooks once per clone:
 
 ```bash
-pip install pre-commit      # or brew install pre-commit
 make install-hooks
 ```
 
-Pre-commit runs fast checks (formatting, YAML/JSON validity, EditorConfig, ESLint, Stylelint). Pre-push runs slower checks (Vitest, Psalm, PHPUnit).
+`pre-commit` runs Prettier, ESLint, Stylelint, and editorconfig-checker on staged files (parallel). `pre-push` runs typecheck and Vitest across the workspace.
 
 ```bash
-pre-commit run --all-files   # run everything manually
-git commit --no-verify       # emergency escape hatch
+pnpm exec lefthook run pre-commit   # run manually against the current index
+git commit --no-verify              # emergency escape hatch
 ```
 
 ## Contributing

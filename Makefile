@@ -35,7 +35,7 @@ typecheck:
 	pnpm typecheck
 
 install-hooks:
-	pre-commit install --hook-type pre-commit --hook-type pre-push
+	pnpm exec lefthook install
 
 clean:
 	pnpm -r exec rm -rf dist coverage .vite

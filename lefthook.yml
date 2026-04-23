@@ -1,0 +1,26 @@
+pre-commit:
+  parallel: true
+  commands:
+    prettier:
+      glob: '*.{ts,js,vue,json,md,yml,yaml,css,html}'
+      run: pnpm exec prettier --check --ignore-unknown {staged_files}
+
+    eslint:
+      glob: '*.{ts,vue,js}'
+      run: pnpm exec eslint {staged_files}
+
+    stylelint:
+      glob: '*.{css,vue}'
+      run: pnpm exec stylelint {staged_files}
+
+    editorconfig:
+      run: pnpm exec editorconfig-checker
+
+pre-push:
+  parallel: true
+  commands:
+    typecheck:
+      run: pnpm typecheck
+
+    test:
+      run: pnpm test
