@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="200mm"
-   height="200mm"
-   viewBox="0 0 200 199.99999"
+   width="142.86424mm"
+   height="143.78351mm"
+   viewBox="0 0 142.86424 143.7835"
    version="1.1"
    id="svg1"
    xml:space="preserve"
@@ -25,8 +25,8 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="1.0137235"
-     inkscape:cx="303.33714"
-     inkscape:cy="288.54021"
+     inkscape:cx="196.30599"
+     inkscape:cy="178.05644"
      inkscape:window-width="2560"
      inkscape:window-height="2120"
      inkscape:window-x="2560"
@@ -123,7 +123,7 @@
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="Layer 2"
-     transform="translate(-16.876915,-60.376923)"><rect
+     transform="translate(-45.444801,-89.613043)"><rect
        style="display:inline;opacity:1;mix-blend-mode:normal;fill:#899db7;fill-opacity:1;stroke:none;stroke-width:0.803012;stroke-linecap:square;stroke-dasharray:none;stroke-opacity:0.996078;filter:url(#filter46)"
        id="rect46"
        width="140.72475"
@@ -225,12 +225,12 @@
        id="path27"
        sodipodi:nodetypes="cc" /><text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20.7636px;font-family:'Gentium Book Basic';-inkscape-font-specification:'Gentium Book Basic, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;writing-mode:lr-tb;direction:ltr;fill:#1e3653;fill-opacity:1;stroke:none;stroke-width:2.35664;stroke-linecap:butt;stroke-dasharray:none;stroke-opacity:1"
-       x="62.454048"
-       y="133.4369"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:136.122px;font-family:'Gentium Book Basic';-inkscape-font-specification:'Gentium Book Basic, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;writing-mode:lr-tb;direction:ltr;fill:#1e3653;fill-opacity:1;stroke:none;stroke-width:15.4496;stroke-linecap:butt;stroke-dasharray:none;stroke-opacity:1"
+       x="84.441673"
+       y="212.63753"
        id="text45"><tspan
          sodipodi:role="line"
          id="tspan45"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20.7636px;font-family:'Gentium Book Basic';-inkscape-font-specification:'Gentium Book Basic, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1e3653;fill-opacity:1;stroke:none;stroke-width:2.35664;stroke-opacity:1"
-         x="62.454048"
-         y="133.4369">$</tspan></text></g></svg>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:136.122px;font-family:'Gentium Book Basic';-inkscape-font-specification:'Gentium Book Basic, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1e3653;fill-opacity:1;stroke:none;stroke-width:15.4496;stroke-opacity:1"
+         x="84.441673"
+         y="212.63753">$</tspan></text></g></svg>
