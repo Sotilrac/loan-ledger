@@ -24,8 +24,14 @@ export function buildDemoLoan(): LoanFile {
       square_feet: 1_850,
       lot_size_sqft: 6_500,
       links: [
-        { label: 'Listing (example)', url: 'https://example.com/listings/123-maple-street' },
-        { label: 'County records', url: 'https://example.com/tax/parcel/123-maple' },
+        {
+          label: 'Loan Ledger README',
+          url: 'https://gitlab.com/sotilrac/loan-ledger/-/blob/main/README.md',
+        },
+        {
+          label: 'Wikipedia: Sugar maple',
+          url: 'https://en.wikipedia.org/wiki/Acer_saccharum',
+        },
       ],
       notes:
         'Stand-in data so you can see how the dashboard reads a real file. Tap Edit to change any field, or Load loan to open your own .loan.yaml. Your file never leaves this browser.',

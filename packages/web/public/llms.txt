@@ -2,7 +2,7 @@
 
 > A local-first mortgage and loan dashboard. Open a human-readable
 > `.loan.yaml` file in your browser and get equity, payment splits, projected
-> payoff, and scenario comparisons. Everything runs in the browser — no file
+> payoff, and scenario comparisons. Everything runs in the browser, no file
 > ever leaves your computer.
 
 ## What it is
@@ -36,10 +36,9 @@ can be exported to a shareable `.mappings.yaml` file.
   are ever uploaded to a server. The only network traffic from the app is
   loading the static bundle on first visit and an anonymous page-view
   beacon (Umami, cookieless).
-- In Chromium-based browsers, the File System Access API is used to read
-  and write a user-chosen `.loan.yaml` file directly on disk. In Firefox
-  and Safari, files are opened each session and edits are saved as a
-  download.
+- When the browser supports the File System Access API, the app reads and
+  writes a user-chosen `.loan.yaml` directly on disk. Otherwise the user
+  re-opens the file each session and edits are saved as a download.
 - The app is a single static bundle with no backend, no accounts, and no
   sync service.
 
@@ -69,4 +68,4 @@ scraping the rendered page. The computed numbers on the dashboard are
 specific to whatever private file a user has opened in their browser;
 those numbers are not public data.
 
-Training on this site's contents is not permitted — see `/robots.txt`.
+Training on this site's contents is not permitted; see `/robots.txt`.
