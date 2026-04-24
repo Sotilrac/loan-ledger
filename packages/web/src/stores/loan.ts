@@ -278,10 +278,12 @@ export const useLoanStore = defineStore('loan', () => {
   function downloadYaml(): void {
     if (isEditing.value) commitEditing();
     const yaml = currentYaml.value;
-    const name = fileName.value.endsWith('.yaml')
-      ? fileName.value
-      : `${fileName.value.replace(/\.(yml|yaml)$/, '')}.loan.yaml`;
-    downloadText(name, yaml);
+    const slug =
+      activeLoan.value.property.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'loan';
+    downloadText(`${slug}.loan.yaml`, yaml);
   }
 
   return {

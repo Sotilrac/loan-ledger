@@ -67,7 +67,9 @@ function monthsLabel(n: number): string {
 }
 
 const sourceLabel = computed(() => {
-  if (store.source === 'demo') return 'Demo loan';
+  if (store.source === 'demo') {
+    return 'Demo loan · tap Edit to customize, or Load loan to open your own .loan.yaml';
+  }
   return store.fileName;
 });
 

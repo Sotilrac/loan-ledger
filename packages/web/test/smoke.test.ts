@@ -10,7 +10,7 @@ describe('App', () => {
 
   it('renders the demo ledger with chart, scenarios, and table', () => {
     const wrapper = mount(App);
-    expect(wrapper.text()).toContain('Demo residence');
+    expect(wrapper.text()).toContain('Maple Cottage');
     expect(wrapper.text()).toContain('EQUITY');
     expect(wrapper.text()).toContain('Balance over time');
     expect(wrapper.text()).toContain('Amortization');

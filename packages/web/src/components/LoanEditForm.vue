@@ -313,7 +313,7 @@ const d = computed(() => store.draft);
         <input
           id="features"
           type="text"
-          placeholder="garage, fireplace, finished basement"
+          placeholder="Finished basement, Attached two-car garage, Gas forced-air heat, Central A/C, South-facing backyard"
           :value="(d.property.features ?? []).join(', ')"
           @input="updatePropertyArray(($event.target as HTMLInputElement).value)"
         />

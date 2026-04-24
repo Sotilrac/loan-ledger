@@ -6,6 +6,19 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="alternate icon" type="image/png" href="./favicon.png" />
     <title>Loan Ledger</title>
+    <script
+      defer
+      src="https://cloud.umami.is/script.js"
+      data-website-id="55179db8-c15f-4659-8430-1ef4e05d3ffb"
+      data-auto-track="false"
+    ></script>
+    <script>
+      // Report this app under /loanledger/... in the shared Umami site, so it
+      // doesn't collide with asmat.ca root-path analytics.
+      window.addEventListener('load', () => {
+        window.umami?.track((props) => ({ ...props, url: '/loanledger' + props.url }));
+      });
+    </script>
   </head>
   <body>
     <div id="app"></div>
