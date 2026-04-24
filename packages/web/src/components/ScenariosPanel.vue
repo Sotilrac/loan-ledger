@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { PhPencilSimple, PhPlus, PhTrash, PhX } from '@phosphor-icons/vue';
 import { computed } from 'vue';
+import { fmtCentsCompact } from '../format.js';
 import { useLoanStore } from '../stores/loan.js';
 import ScenarioEditor from './ScenarioEditor.vue';
 
@@ -10,11 +11,7 @@ const currency = computed(() => store.activeLoan.property.currency);
 
 function fmtInterestDelta(n: number): string {
   if (n === 0) return 'no interest change';
-  const abs = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency.value,
-    maximumFractionDigits: 0,
-  }).format(Math.abs(n));
+  const abs = fmtCentsCompact(Math.abs(n), currency.value);
   return n > 0 ? `−${abs} interest` : `+${abs} interest`;
 }
 

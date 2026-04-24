@@ -1,6 +1,11 @@
-import type { LoanComputation, LoanFile, Payment, ScenarioEvaluation } from '@loan-ledger/core';
+import type {
+  LoanComputation,
+  LoanFile,
+  LoanSource,
+  Payment,
+  ScenarioEvaluation,
+} from '@loan-ledger/core';
 import {
-  DEMO_LOAN,
   buildDemoLoan,
   computeLoan,
   evaluateAllScenarios,
@@ -10,25 +15,15 @@ import {
 } from '@loan-ledger/core';
 import { defineStore } from 'pinia';
 import { computed, ref, shallowRef } from 'vue';
-import {
-  downloadText,
-  fsaSupported,
-  requestWritePermission,
-  writeToHandle,
-  type FsaFileHandle,
-  type OpenedFile,
-} from '../composables/useFileHandle.js';
-
-export type SourceType = 'demo' | 'fsa' | 'fallback';
+import { downloadText, fsaSupported } from '../composables/useFileHandle.js';
+import { DemoSource } from '../source/demoSource.js';
 
 export const useLoanStore = defineStore('loan', () => {
-  // --- Loaded loan state ----------------------------------------------------
+  // --- Source + loan state --------------------------------------------------
+  const source = shallowRef<LoanSource>(new DemoSource());
   const loan = shallowRef<LoanFile>(buildDemoLoan());
-  const source = ref<SourceType>('demo');
-  const fileName = ref<string>('demo.loan.yaml');
-  const fsaHandle = shallowRef<FsaFileHandle | null>(null);
 
-  const lastSavedYaml = ref<string>(serializeLoanYaml(DEMO_LOAN));
+  const lastSavedYaml = ref<string>(serializeLoanYaml(loan.value));
   const validationErrors = ref<{ path: string; message: string }[]>([]);
 
   // --- Edit state -----------------------------------------------------------
@@ -83,7 +78,7 @@ export const useLoanStore = defineStore('loan', () => {
 
   /**
    * First month where the scheduled principal portion reaches (or exceeds) the
-   * scheduled interest portion. Null when that's already true at period 1 —
+   * scheduled interest portion. Null when that's already true at period 1:
    * for very-low-rate loans the crossover is trivial and adds no signal.
    */
   const crossoverPeriod = computed<number | null>(() => {
@@ -97,15 +92,17 @@ export const useLoanStore = defineStore('loan', () => {
 
   const hasUnsavedChanges = computed<boolean>(() => currentYaml.value !== lastSavedYaml.value);
 
-  const canWriteToFile = computed<boolean>(() => source.value === 'fsa' && !!fsaHandle.value);
+  const canWriteToFile = computed<boolean>(() => source.value.canWrite);
+  const fileName = computed<string>(() => source.value.name);
 
   // --- Actions --------------------------------------------------------------
 
   function loadDemo(): void {
+    // Bypass the async attachSource path so the demo is available synchronously
+    // on mount and "Use demo data" resets state without a round-trip through
+    // parseLoanYaml.
     loan.value = buildDemoLoan();
-    source.value = 'demo';
-    fileName.value = 'demo.loan.yaml';
-    fsaHandle.value = null;
+    source.value = new DemoSource();
     lastSavedYaml.value = serializeLoanYaml(loan.value);
     validationErrors.value = [];
     isEditing.value = false;
@@ -113,17 +110,20 @@ export const useLoanStore = defineStore('loan', () => {
     selectedPeriod.value = null;
   }
 
-  function openFromText(opened: OpenedFile, sourceKind: SourceType): boolean {
-    const result = parseLoanYaml(opened.text);
+  /**
+   * Attach a new source and load its current YAML. Returns true on success;
+   * validation failures leave the previous loan visible with an error banner.
+   */
+  async function attachSource(newSource: LoanSource): Promise<boolean> {
+    const yaml = await newSource.read();
+    const result = parseLoanYaml(yaml);
     if (!result.ok) {
       validationErrors.value = result.errors;
       return false;
     }
     loan.value = result.value;
-    fileName.value = opened.name;
-    source.value = sourceKind;
-    fsaHandle.value = opened.handle;
-    lastSavedYaml.value = opened.text;
+    source.value = newSource;
+    lastSavedYaml.value = yaml;
     validationErrors.value = [];
     isEditing.value = false;
     draft.value = null;
@@ -166,12 +166,8 @@ export const useLoanStore = defineStore('loan', () => {
     saveError.value = null;
     try {
       const yaml = currentYaml.value;
-      if (fsaHandle.value) {
-        const granted = await requestWritePermission(fsaHandle.value);
-        if (!granted) {
-          throw new Error('Write permission denied');
-        }
-        await writeToHandle(fsaHandle.value, yaml);
+      if (source.value.canWrite) {
+        await source.value.write(yaml);
       } else {
         downloadText(fileName.value, yaml);
       }
@@ -210,9 +206,9 @@ export const useLoanStore = defineStore('loan', () => {
 
   /**
    * Merge imported payments into the current loan. Multiple rows on the same
-   * date — both within a single CSV (a regular payment + a principal-only
-   * row) and across imports (two filtered passes from the same bank export) —
-   * are *summed*, not replaced: amounts add, principal/interest/escrow/extra
+   * date, both within a single CSV (a regular payment + a principal-only row)
+   * and across imports (two filtered passes from the same bank export), are
+   * summed rather than replaced: amounts add, principal/interest/escrow/extra
    * fields add, notes concatenate.
    */
   function importPayments(imported: Payment[]): number {
@@ -273,7 +269,7 @@ export const useLoanStore = defineStore('loan', () => {
 
   /**
    * Always-available export: writes the current loan YAML to a download,
-   * independent of whether a FSA handle is attached. Use this as "Save as".
+   * independent of the attached source. Use this as "Save as".
    */
   function downloadYaml(): void {
     if (isEditing.value) commitEditing();
@@ -290,8 +286,6 @@ export const useLoanStore = defineStore('loan', () => {
     // state
     loan,
     source,
-    fileName,
-    fsaHandle,
     validationErrors,
     isEditing,
     draft,
@@ -311,11 +305,12 @@ export const useLoanStore = defineStore('loan', () => {
     currentYaml,
     hasUnsavedChanges,
     canWriteToFile,
+    fileName,
     // capabilities
     fsaAvailable: fsaSupported(),
     // actions
     loadDemo,
-    openFromText,
+    attachSource,
     startEditing,
     cancelEditing,
     commitEditing,

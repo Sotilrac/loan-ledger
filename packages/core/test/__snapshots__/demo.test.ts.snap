@@ -1,0 +1,19 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildDemoLoan > summary at 2026-04-01 matches the committed snapshot 1`] = `
+{
+  "actual_extra_to_date": 8000,
+  "actual_interest_to_date": 103518.73,
+  "actual_principal_to_date": 48892.3,
+  "current_actual_balance": 393107.7,
+  "current_scheduled_balance": 394970.56,
+  "equity": 291892.3,
+  "months_ahead_of_schedule": 3,
+  "original_principal": 450000,
+  "payments_made": 69,
+  "projected_payoff_date": "2049-10-01",
+  "scheduled_interest_to_date": 103581.59,
+  "scheduled_payoff_date": "2049-10-01",
+  "term_months": 360,
+}
+`;

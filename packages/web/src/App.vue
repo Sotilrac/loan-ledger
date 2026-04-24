@@ -8,6 +8,7 @@ import CsvImportDialog from './components/CsvImportDialog.vue';
 import FilePicker from './components/FilePicker.vue';
 import LoanEditForm from './components/LoanEditForm.vue';
 import ScenariosPanel from './components/ScenariosPanel.vue';
+import * as fmt from './format.js';
 import { useLoanStore } from './stores/loan.js';
 
 const store = useLoanStore();
@@ -15,20 +16,14 @@ const importOpen = ref(false);
 
 const currency = computed(() => store.activeLoan.property.currency);
 
-const fmtCents = (n: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency.value,
-  }).format(n);
-
-const fmtPercent = (n: number): string => `${(n * 100).toFixed(3)}%`;
-
-const fmtPct1 = (n: number): string => `${(n * 100).toFixed(1)}%`;
+const fmtCents = (n: number): string => fmt.fmtCents(n, currency.value);
+const fmtCentsCompact = (n: number): string => fmt.fmtCentsCompact(n, currency.value);
+const { fmtPct1, monthsLabel } = fmt;
 
 const currentRateDisplay = computed(() => {
   const madeRows = store.computation.ledger.filter((r) => r.actual);
   const last = madeRows[madeRows.length - 1];
-  return fmtPercent(last?.rate ?? store.activeLoan.loan.annual_rate);
+  return fmt.fmtPercent(last?.rate ?? store.activeLoan.loan.annual_rate);
 });
 
 const principalRepaid = computed(
@@ -47,27 +42,8 @@ const appreciation = computed(() => {
   return { abs: current - purchase, pct: (current - purchase) / purchase };
 });
 
-const fmtCentsCompact = (n: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency.value,
-    maximumFractionDigits: 0,
-  }).format(n);
-
-function monthsLabel(n: number): string {
-  if (n === 0) return 'On schedule';
-  const abs = Math.abs(n);
-  const years = Math.floor(abs / 12);
-  const rem = abs % 12;
-  const parts: string[] = [];
-  if (years) parts.push(`${years} yr${years === 1 ? '' : 's'}`);
-  if (rem) parts.push(`${rem} mo`);
-  if (!parts.length) parts.push('0 mo');
-  return (n > 0 ? '+' : '−') + parts.join(' ');
-}
-
 const sourceLabel = computed(() => {
-  if (store.source === 'demo') {
+  if (store.source.kind === 'demo') {
     return 'Demo loan · tap Edit to customize, or Load loan to open your own .loan.yaml';
   }
   return store.fileName;

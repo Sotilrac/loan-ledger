@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { pickLoanFile, readFile } from '../composables/useFileHandle.js';
+import { pickLoanFile } from '../composables/useFileHandle.js';
+import { FallbackSource } from '../source/fallbackSource.js';
+import { FsaSource } from '../source/fsaSource.js';
 import { useLoanStore } from '../stores/loan.js';
 
 const store = useLoanStore();
@@ -10,10 +12,9 @@ const error = ref<string | null>(null);
 async function openViaFSA() {
   error.value = null;
   const opened = await pickLoanFile();
-  if (!opened) return;
-  if (!store.openFromText(opened, 'fsa')) {
-    error.value = 'File failed validation — see banner below.';
-  }
+  if (!opened || !opened.handle) return;
+  const ok = await store.attachSource(new FsaSource(opened.handle, opened.text));
+  if (!ok) error.value = 'File failed validation, see banner below.';
 }
 
 function openFallback() {
@@ -25,10 +26,9 @@ async function onFileChosen(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
-  const opened = await readFile(file);
-  if (!store.openFromText(opened, 'fallback')) {
-    error.value = 'File failed validation — see banner below.';
-  }
+  const text = await file.text();
+  const ok = await store.attachSource(new FallbackSource(file.name, text));
+  if (!ok) error.value = 'File failed validation, see banner below.';
   input.value = '';
 }
 </script>
@@ -38,7 +38,7 @@ async function onFileChosen(event: Event) {
     <button
       type="button"
       class="primary"
-      data-tooltip="Opens a .loan.yaml file from your computer. Nothing is uploaded — parsing and math run entirely in your browser."
+      data-tooltip="Opens a .loan.yaml file from your computer. Nothing is uploaded, parsing and math run entirely in your browser."
       @click="store.fsaAvailable ? openViaFSA() : openFallback()"
     >
       Load loan
