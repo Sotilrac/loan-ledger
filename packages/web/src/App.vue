@@ -88,7 +88,7 @@ async function onSave() {
 <template>
   <main class="app">
     <header class="site-header">
-      <div class="title-block">
+      <div class="header-top">
         <p class="eyebrow">
           Loan Ledger
           <span class="by">
@@ -96,56 +96,82 @@ async function onSave() {
             <a href="https://asmat.ca" target="_blank" rel="noopener noreferrer">Carlos Asmat</a>
           </span>
         </p>
-        <h1>{{ store.activeLoan.property.name }}</h1>
-        <p class="caption purchase-info">
-          Purchased {{ formatMonthFullYear(store.activeLoan.property.purchase_date) }} for
-          {{ fmtCentsCompact(store.activeLoan.property.purchase_price) }}
-        </p>
-        <p class="source caption">{{ sourceLabel }}</p>
-        <p v-if="(store.activeLoan.property.links ?? []).length" class="property-links">
-          <a
-            v-for="link in store.activeLoan.property.links"
-            :key="link.url"
-            :href="link.url"
-            target="_blank"
-            rel="noopener noreferrer"
+        <div class="controls">
+          <FilePicker />
+          <button
+            v-if="!store.isEditing"
+            class="secondary"
+            type="button"
+            @click="store.startEditing"
           >
-            {{ link.label }}
-          </a>
-        </p>
+            Edit
+          </button>
+          <button
+            v-if="!store.isEditing"
+            class="secondary import-btn"
+            type="button"
+            @click="importOpen = true"
+          >
+            Import payments
+          </button>
+          <template v-else>
+            <button class="primary" type="button" @click="store.commitEditing">Done editing</button>
+            <button class="tertiary" type="button" @click="store.cancelEditing">Cancel</button>
+          </template>
+          <button
+            v-if="store.canWriteToFile && !store.isEditing"
+            class="primary"
+            type="button"
+            :disabled="store.saveState === 'saving'"
+            @click="onSave"
+          >
+            Save to file
+          </button>
+          <button
+            v-if="!store.isEditing"
+            class="secondary"
+            type="button"
+            @click="store.downloadYaml"
+          >
+            Save
+          </button>
+          <button
+            v-if="!store.isEditing"
+            class="tertiary demo-btn"
+            type="button"
+            @click="store.loadDemo"
+          >
+            Use demo data
+          </button>
+        </div>
       </div>
-      <div class="controls">
-        <FilePicker />
-        <button v-if="!store.isEditing" class="secondary" type="button" @click="store.startEditing">
-          Edit
-        </button>
-        <button v-if="!store.isEditing" class="secondary" type="button" @click="importOpen = true">
-          Import payments
-        </button>
-        <template v-else>
-          <button class="primary" type="button" @click="store.commitEditing">Done editing</button>
-          <button class="tertiary" type="button" @click="store.cancelEditing">Cancel</button>
-        </template>
-        <button
-          v-if="store.canWriteToFile && !store.isEditing"
-          class="primary"
-          type="button"
-          :disabled="store.saveState === 'saving'"
-          @click="onSave"
-        >
-          Save to file
-        </button>
-        <button v-if="!store.isEditing" class="secondary" type="button" @click="store.downloadYaml">
-          Save
-        </button>
-        <button
-          v-if="!store.isEditing"
-          class="tertiary demo-btn"
-          type="button"
-          @click="store.loadDemo"
-        >
-          Use demo data
-        </button>
+
+      <div class="title-block">
+        <div class="title-main">
+          <h1>{{ store.activeLoan.property.name }}</h1>
+          <p class="caption purchase-info">
+            Purchased {{ formatMonthFullYear(store.activeLoan.property.purchase_date) }} for
+            {{ fmtCentsCompact(store.activeLoan.property.purchase_price) }}
+          </p>
+          <p class="source caption">{{ sourceLabel }}</p>
+          <p v-if="(store.activeLoan.property.links ?? []).length" class="property-links">
+            <a
+              v-for="link in store.activeLoan.property.links"
+              :key="link.url"
+              :href="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ link.label }}
+            </a>
+          </p>
+        </div>
+        <div v-if="!store.isEditing" class="mobile-actions">
+          <button class="secondary" type="button" @click="importOpen = true">
+            Import payments
+          </button>
+          <button class="tertiary" type="button" @click="store.loadDemo">Use demo data</button>
+        </div>
       </div>
     </header>
 

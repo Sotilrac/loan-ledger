@@ -38,6 +38,7 @@ async function onFileChosen(event: Event) {
     <button
       type="button"
       class="primary"
+      data-tooltip="Opens a .loan.yaml file from your computer. Nothing is uploaded — parsing and math run entirely in your browser."
       @click="store.fsaAvailable ? openViaFSA() : openFallback()"
     >
       Load loan
@@ -58,28 +59,6 @@ async function onFileChosen(event: Event) {
   display: flex;
   gap: 0.75rem;
   align-items: center;
-}
-
-button {
-  font-family: var(--ll-font-sans);
-  font-size: 0.8125rem;
-  padding: 0.375rem 0.875rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition:
-    background 120ms,
-    border-color 120ms;
-}
-
-.primary {
-  background: var(--ll-accent);
-  color: #fff;
-  border: 1px solid var(--ll-accent);
-}
-
-.primary:hover {
-  background: var(--ll-accent-hover);
-  border-color: var(--ll-accent-hover);
 }
 
 .error {
