@@ -173,9 +173,23 @@ const scenarioPaths = computed(() => {
 
 // Hover state — shared with the amortization table via the Pinia store.
 const store = useLoanStore();
+
+const crossoverX = computed(() => {
+  if (store.crossoverPeriod === null) return null;
+  return x.value(store.crossoverPeriod - 1);
+});
+
 const hoverPoint = computed(() => {
-  if (store.selectedPeriod == null) return null;
-  return points.value[store.selectedPeriod - 1] ?? null;
+  if (store.selectedPeriod != null) {
+    const hit = points.value[store.selectedPeriod - 1];
+    if (hit) return hit;
+  }
+  // Fallback: last past row. Keeps the tooltip populated on mobile where
+  // there's no hover, and before the selection is seeded on mount.
+  for (let i = points.value.length - 1; i >= 0; i -= 1) {
+    if (points.value[i]!.date <= today.value) return points.value[i]!;
+  }
+  return points.value[0] ?? null;
 });
 
 const isHoverFuture = computed(() => {
@@ -361,6 +375,28 @@ watch(
           stroke-width="1"
         />
         <text :x="todayX + 4" :y="10" class="annotation">today</text>
+
+        <!-- Crossover annotation: where scheduled principal ≥ scheduled interest -->
+        <g v-if="crossoverX !== null">
+          <line
+            :x1="crossoverX"
+            :x2="crossoverX"
+            :y1="0"
+            :y2="plotH"
+            stroke="var(--ll-mark)"
+            stroke-width="1"
+            stroke-dasharray="3 3"
+            stroke-opacity="0.55"
+          />
+          <text
+            :x="crossoverX + 4"
+            :y="10"
+            class="annotation crossover-label"
+            fill="var(--ll-mark)"
+          >
+            crossover
+          </text>
+        </g>
 
         <!-- Scheduled balance line: thin Ink Blue @ 0.7 -->
         <path
@@ -582,5 +618,11 @@ svg {
     'tnum' 1,
     'lnum' 1;
   font-variant-numeric: tabular-nums lining-nums;
+}
+
+.crossover-label {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 </style>

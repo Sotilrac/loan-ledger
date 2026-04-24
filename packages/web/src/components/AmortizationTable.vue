@@ -149,6 +149,10 @@ function showsTodayMarker(row: LedgerRow, idx: number): boolean {
   return prev.date <= store.today && row.date > store.today;
 }
 
+function showsCrossoverMarker(row: LedgerRow): boolean {
+  return store.crossoverPeriod !== null && row.period === store.crossoverPeriod;
+}
+
 // --- Payment inline editor --------------------------------------------------
 
 const editingDate = ref<string | null>(null);
@@ -268,6 +272,9 @@ function deleteCurrent() {
           <template v-for="{ row, idx } in group.rows" :key="row.period">
             <tr v-if="showsTodayMarker(row, idx)" class="today-marker">
               <td colspan="8"><span>today</span></td>
+            </tr>
+            <tr v-if="showsCrossoverMarker(row)" class="crossover-marker">
+              <td colspan="8"><span>crossover · principal ≥ interest</span></td>
             </tr>
             <tr
               :data-period="row.period"
@@ -637,7 +644,8 @@ tbody tr.selected {
 }
 
 .year-divider td,
-.today-marker td {
+.today-marker td,
+.crossover-marker td {
   padding: 0.2rem 0.5rem;
   border-top: 1px solid var(--ll-ink-faint);
   border-bottom: none;
@@ -662,6 +670,13 @@ tbody tr.selected {
   font-style: italic;
   font-size: 0.875rem;
   color: var(--ll-ink-muted);
+}
+
+.crossover-marker span {
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ll-mark);
 }
 
 /* Row edit icon */

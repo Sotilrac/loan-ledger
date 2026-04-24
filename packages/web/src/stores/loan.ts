@@ -81,6 +81,18 @@ export const useLoanStore = defineStore('loan', () => {
     return Math.max(0, Math.round(diff * 100) / 100);
   });
 
+  /**
+   * First month where the scheduled principal portion reaches (or exceeds) the
+   * scheduled interest portion. Null when that's already true at period 1 —
+   * for very-low-rate loans the crossover is trivial and adds no signal.
+   */
+  const crossoverPeriod = computed<number | null>(() => {
+    const rows = computation.value.ledger;
+    const hit = rows.find((r) => r.scheduled.principal >= r.scheduled.interest);
+    if (!hit || hit.period === 1) return null;
+    return hit.period;
+  });
+
   const currentYaml = computed<string>(() => serializeLoanYaml(activeLoan.value));
 
   const hasUnsavedChanges = computed<boolean>(() => currentYaml.value !== lastSavedYaml.value);
@@ -293,6 +305,7 @@ export const useLoanStore = defineStore('loan', () => {
     scenarios,
     activeScenarios,
     interestSavedByExtras,
+    crossoverPeriod,
     currentYaml,
     hasUnsavedChanges,
     canWriteToFile,

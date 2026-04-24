@@ -78,6 +78,11 @@ export function formatMonthOnly(iso: string): string {
   return MONTH_NAMES[Number(m) - 1] ?? '';
 }
 
+export function formatMonthFullYear(iso: string): string {
+  const [y, m] = iso.split('-');
+  return `${MONTH_NAMES[Number(m) - 1]} ${y}`;
+}
+
 function round(n: number): number {
   return Math.abs(n) < 1e-10 ? 0 : Number(n.toPrecision(12));
 }
