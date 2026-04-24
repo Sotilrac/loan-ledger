@@ -138,3 +138,17 @@
 .delta .negative {
   color: var(--ll-negative);
 }
+
+/* On mobile the page itself scrolls — let the scenarios panel grow to fit all
+  its cards rather than confining them to an inner scroll area. */
+@media (width < 900px) {
+  .scenarios {
+    overflow: visible;
+    min-height: auto;
+  }
+
+  .scenarios ul {
+    overflow-y: visible;
+    min-height: auto;
+  }
+}
