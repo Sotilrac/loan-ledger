@@ -25,12 +25,12 @@ export function buildDemoLoan(): LoanFile {
       lot_size_sqft: 6_500,
       links: [
         {
-          label: 'Loan Ledger README',
+          label: 'How to (README)',
           url: 'https://gitlab.com/sotilrac/loan-ledger/-/blob/main/README.md',
         },
         {
-          label: 'Wikipedia: Sugar maple',
-          url: 'https://en.wikipedia.org/wiki/Acer_saccharum',
+          label: 'Wikipedia: Mortgage',
+          url: 'https://en.wikipedia.org/wiki/Mortgage',
         },
       ],
       notes:
