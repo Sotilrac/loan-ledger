@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watchEffect } from 'vue';
 import BalanceChart from './charts/BalanceChart.vue';
 import EquityGauge from './charts/EquityGauge.vue';
 import { formatMonthFullYear, formatMonthLabel } from './charts/scale.js';
@@ -74,6 +74,11 @@ const sourceLabel = computed(() => {
 });
 
 const lastUpdatedYear = 2026;
+
+watchEffect(() => {
+  const name = store.activeLoan.property.name?.trim();
+  document.title = name ? `${name} — Loan Ledger` : 'Loan Ledger';
+});
 
 async function onSave() {
   await store.save();
