@@ -534,8 +534,13 @@ svg {
   }
 
   .tooltip dl {
-    grid-auto-flow: column;
-    grid-template-columns: repeat(auto-fit, minmax(80px, max-content));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.375rem 0.75rem;
+  }
+
+  .tooltip div {
+    align-items: flex-start;
+    gap: 0;
   }
 
   .tooltip-date {
