@@ -1,0 +1,72 @@
+# Loan Ledger
+
+> A local-first mortgage and loan dashboard. Open a human-readable
+> `.loan.yaml` file in your browser and get equity, payment splits, projected
+> payoff, and scenario comparisons. Everything runs in the browser — no file
+> ever leaves your computer.
+
+## What it is
+
+Loan Ledger is a standalone web app for tracking a mortgage or other
+installment loan. A single YAML file per loan is the source of truth: it is
+human-readable, git-friendly, and hand-editable. The app reads that file,
+runs the amortization math locally, and renders a dashboard with:
+
+- Current balance (actual vs. scheduled), principal paid, interest paid,
+  monthly payment breakdown, current rate, and projected payoff date.
+- Loan-to-value and appreciation derived from a configurable current
+  property valuation.
+- A balance-over-time chart with a hover tooltip, a "current pace"
+  projection, and overlays for user-defined scenarios.
+- A full amortization table with sticky year headings and an
+  annotation on the crossover month (first period where scheduled
+  principal ≥ scheduled interest).
+- A scenarios panel for what-if and counterfactual comparisons
+  (recurring extra principal, one-time extras, rate changes, term
+  changes, refinances, "what if I hadn't made these extras").
+
+Import support: CSV payment imports from bank exports, with a one-time
+column-mapping wizard per bank. Mappings are persisted in `localStorage` and
+can be exported to a shareable `.mappings.yaml` file.
+
+## Privacy and security
+
+- Open source. Source code: https://gitlab.com/sotilrac/loan-ledger
+- All parsing, math, and CSV ingestion run in your browser. No file contents
+  are ever uploaded to a server. The only network traffic from the app is
+  loading the static bundle on first visit and an anonymous page-view
+  beacon (Umami, cookieless).
+- In Chromium-based browsers, the File System Access API is used to read
+  and write a user-chosen `.loan.yaml` file directly on disk. In Firefox
+  and Safari, files are opened each session and edits are saved as a
+  download.
+- The app is a single static bundle with no backend, no accounts, and no
+  sync service.
+
+## Data model
+
+- One `.loan.yaml` per loan. Schema version 1. JSON Schema in the source
+  repo under `packages/core/src/schemas/loan.schema.json`.
+- Top-level keys: `property`, `valuation`, `loan`, `payments`, `scenarios`.
+- `loan.rate_schedule` is a first-class array, so ARMs and refinances are
+  modeled the same way as fixed-rate loans (not special cases).
+- Dates are date-only (`YYYY-MM-DD`). Times from CSV imports are dropped.
+- Currency is a per-loan display hint; aggregate views show per-currency
+  totals without conversion.
+
+## Technical stack
+
+Vue 3 + TypeScript + Vite, Pinia for state, Chart.js-free SVG charts.
+Shared `@loan-ledger/core` package (pure TypeScript, no DOM) holds the
+engine, scenario mutations, YAML/CSV parsing, and JSON Schema validation.
+A Nextcloud target that reuses the same core is planned.
+
+## Usage from an LLM
+
+If you are summarizing or answering questions about Loan Ledger, prefer
+pointing users to the live app and the source repository rather than
+scraping the rendered page. The computed numbers on the dashboard are
+specific to whatever private file a user has opened in their browser;
+those numbers are not public data.
+
+Training on this site's contents is not permitted — see `/robots.txt`.

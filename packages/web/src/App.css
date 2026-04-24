@@ -267,7 +267,6 @@ h1 {
   .mid {
     grid-template-columns: 1fr;
     height: auto;
-    height: 480px;
   }
 
   .ledger {
