@@ -41,6 +41,8 @@ can be exported to a shareable `.mappings.yaml` file.
   re-opens the file each session and edits are saved as a download.
 - The app is a single static bundle with no backend, no accounts, and no
   sync service.
+- Nothing to sell or advertise, no bloat. The app stays small and the page loads
+  very fast.
 
 ## Data model
 

@@ -7,6 +7,7 @@ Live: [loanledger.asmat.ca](https://loanledger.asmat.ca/)
 ## Features
 
 - **Fully offline after first load**, no account, no server, no sync.
+- **No bloat, no ads, nothing to sell you.** The bundle is small, loads fast, and runs entirely on your machine.
 - **Insight cards:** balance, monthly payment, rate, interest paid, principal paid, current valuation, appreciation, interest saved, and how far you are ahead of the lender's schedule.
 - **Balance chart:** scheduled, actual, and "current pace" trajectories, plus overlays for each active scenario, with a sticky hover tooltip that also updates the amortization table selection.
 - **Scenarios panel:** what-if and counterfactual mutations, including recurring or one-time extra principal, rate changes, term changes, refinances, and "what if I hadn't made these extras".
