@@ -92,4 +92,4 @@ Conventional Commits. Scope to one package where possible (`feat(core): ...`, `f
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+MPL-2.0. See [`LICENSE`](LICENSE).
