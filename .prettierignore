@@ -12,6 +12,10 @@ packages/nextcloud/vendor-bin/**/vendor/
 packages/nextcloud/composer.lock
 packages/nextcloud/vendor-bin/**/composer.lock
 
+# Vite output (Nextcloud)
+packages/nextcloud/js/
+packages/nextcloud/css/
+
 # Tool-managed
 .claude/
 

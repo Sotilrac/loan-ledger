@@ -3,3 +3,5 @@
 **/coverage
 packages/nextcloud/vendor/
 packages/nextcloud/vendor-bin/
+packages/nextcloud/js/
+packages/nextcloud/css/

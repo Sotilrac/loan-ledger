@@ -29,5 +29,14 @@ module.exports = {
       files: ['**/*.vue'],
       customSyntax: 'postcss-html',
     },
+    {
+      // Nextcloud's CSS variables (`--color-*`, `--ll-font-*`, etc.) are
+      // referenced inside the Nextcloud app for theme integration; we
+      // don't author them here, so the `ll-` prefix rule doesn't apply.
+      files: ['packages/nextcloud/**/*.{css,vue}'],
+      rules: {
+        'custom-property-pattern': null,
+      },
+    },
   ],
 };

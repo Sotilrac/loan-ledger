@@ -1,0 +1,29 @@
+{
+  "name": "@loan-ledger/nextcloud",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Nextcloud frontend for Loan Ledger.",
+  "license": "MPL-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "vue-tsc --noEmit && vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@loan-ledger/core": "workspace:*",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.33",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.6",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^25.0.1",
+    "vite": "^8.0.9",
+    "vitest": "^4.1.5",
+    "vue-tsc": "^3.2.7"
+  }
+}

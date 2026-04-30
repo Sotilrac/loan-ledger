@@ -1,0 +1,108 @@
+/*
+ * Minimal styling for the Nextcloud shell. The richer look-and-feel from
+ * the standalone web app gets folded in during M4 once the components are
+ * extracted to @loan-ledger/ui; for now we just want readable baselines
+ * inside Nextcloud's chrome.
+ */
+
+.ll-shell {
+  font-family: var(--ll-font-sans, system-ui, sans-serif);
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.ll-shell__bar {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border, #ddd);
+}
+
+.ll-shell__title {
+  font-size: 1.25rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.ll-shell__nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.ll-shell__nav a {
+  color: var(--color-text-maxcontrast, #555);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.ll-shell__nav a.is-active {
+  color: var(--color-main-text, #000);
+  border-bottom-color: var(--color-primary-element, #0082c9);
+}
+
+.ll-shell__main {
+  flex: 1;
+  padding: 1.5rem 1.25rem;
+  max-width: 64rem;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.ll-loanlist {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ll-loanlist__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border, #eee);
+  border-radius: 6px;
+  background: var(--color-main-background, #fff);
+  text-decoration: none;
+  color: inherit;
+}
+
+.ll-loanlist__item:hover {
+  border-color: var(--color-primary-element, #0082c9);
+}
+
+.ll-loanlist__path {
+  font-family: var(--ll-font-mono, ui-monospace, monospace);
+  font-size: 0.875rem;
+}
+
+.ll-loanlist__meta {
+  font-size: 0.75rem;
+  color: var(--color-text-maxcontrast, #888);
+}
+
+.ll-empty,
+.ll-error {
+  padding: 1rem;
+  border-radius: 6px;
+  background: var(--color-background-hover, #f5f5f5);
+  color: var(--color-text-maxcontrast, #555);
+}
+
+.ll-error {
+  background: var(--color-warning-background, #fef0c7);
+  color: var(--color-warning-text, #663c00);
+}
+
+.ll-detail__yaml {
+  background: var(--color-background-dark, #f5f5f5);
+  padding: 1rem;
+  border-radius: 6px;
+  font-family: var(--ll-font-mono, ui-monospace, monospace);
+  font-size: 0.8125rem;
+  overflow: auto;
+  white-space: pre;
+}

@@ -1,5 +1,5 @@
 .PHONY: help install dev build test lint format typecheck install-hooks clean deploy \
-	nc-install nc-test nc-lint nc-format nc-clean nc-shell
+	nc-install nc-build nc-test nc-lint nc-format nc-clean nc-shell
 
 NC_DIR := packages/nextcloud
 PHP_IMAGE ?= php:8.2-cli
@@ -21,6 +21,7 @@ help:
 	@echo "  Nextcloud app (PHP — runs natively if composer/php are available,"
 	@echo "  otherwise use 'make nc-shell' to drop into a PHP 8.2 container):"
 	@echo "  make nc-install     Composer install for $(NC_DIR)"
+	@echo "  make nc-build       Build the Nextcloud frontend bundle (js/, css/)"
 	@echo "  make nc-test        Run PHPUnit suite for the Nextcloud app"
 	@echo "  make nc-lint        Run php-cs-fixer (dry-run) + Psalm"
 	@echo "  make nc-format      Auto-fix PHP code style"
@@ -59,6 +60,9 @@ deploy: build
 
 nc-install:
 	cd $(NC_DIR) && composer install --no-progress
+
+nc-build:
+	pnpm --filter @loan-ledger/nextcloud build
 
 nc-test:
 	cd $(NC_DIR) && composer test
