@@ -1,5 +1,6 @@
 .PHONY: help install dev build test lint format typecheck install-hooks clean deploy \
-	nc-install nc-build nc-test nc-lint nc-format nc-clean nc-shell
+	nc-install nc-build nc-test nc-lint nc-format nc-clean nc-shell nc-dev nc-dev-down \
+	nc-dev-enable nc-dev-logs
 
 NC_DIR := packages/nextcloud
 PHP_IMAGE ?= php:8.2-cli
@@ -27,6 +28,10 @@ help:
 	@echo "  make nc-format      Auto-fix PHP code style"
 	@echo "  make nc-shell       Open a PHP 8.2 shell with $(NC_DIR) mounted"
 	@echo "  make nc-clean       Remove PHP build caches and vendor dirs"
+	@echo "  make nc-dev         Bring up a local Nextcloud at http://localhost:8080"
+	@echo "  make nc-dev-enable  Enable the loanledger app inside the running NC"
+	@echo "  make nc-dev-logs    Tail logs from the dev Nextcloud"
+	@echo "  make nc-dev-down    Tear down the dev Nextcloud and discard its data"
 
 install:
 	pnpm install
@@ -82,3 +87,18 @@ nc-shell:
 nc-clean:
 	rm -rf $(NC_DIR)/vendor $(NC_DIR)/vendor-bin/*/vendor \
 		$(NC_DIR)/.phpunit.cache $(NC_DIR)/.psalm.cache $(NC_DIR)/.php-cs-fixer.cache
+
+nc-dev: nc-build
+	docker compose -f $(NC_DIR)/dev/docker-compose.yml up -d
+	@echo "Nextcloud booting at http://localhost:8080 (admin / admin)."
+	@echo "First boot takes ~30s. Then run: make nc-dev-enable"
+
+nc-dev-enable:
+	docker compose -f $(NC_DIR)/dev/docker-compose.yml exec --user www-data nextcloud \
+		php occ app:enable loanledger
+
+nc-dev-logs:
+	docker compose -f $(NC_DIR)/dev/docker-compose.yml logs -f
+
+nc-dev-down:
+	docker compose -f $(NC_DIR)/dev/docker-compose.yml down -v

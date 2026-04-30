@@ -2,7 +2,10 @@
 
 A local-first mortgage and loan dashboard. Open a human-readable `.loan.yaml` file in your browser and see equity, payment splits, projected payoff, and scenario comparisons. Nothing is uploaded. Parsing and math run entirely in your browser.
 
-Live: [loanledger.asmat.ca](https://loanledger.asmat.ca/)
+Two ways to run it:
+
+- **Standalone web app** at [loanledger.asmat.ca](https://loanledger.asmat.ca/), or self-hosted from `packages/web/dist`. Uses your browser's File System Access API to edit a local `.loan.yaml`.
+- **Nextcloud app** (`@loan-ledger/nextcloud`) that reads `.loan.yaml` files from a configurable folder (default `/Ledgers/`) so a household can share loans across accounts using normal Nextcloud sharing. See [Testing with Nextcloud](#testing-with-nextcloud) below.
 
 ## Features
 
@@ -78,13 +81,73 @@ make typecheck   # tsc + vue-tsc
 make deploy      # build then deploy to Cloudflare Pages (wrangler)
 ```
 
-The heart of the app is `@loan-ledger/core`: pure TypeScript, 100% line coverage on `LoanEngine` and `ScenarioEngine`, hand-verified amortization tables as fixtures. `@loan-ledger/web` is a thin Vue 3 + Vite shell over that core.
+### Workspace layout
+
+| Package                  | What it is                                                                                                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@loan-ledger/core`      | Pure TypeScript engine: parsing, validation, `LoanEngine`, `ScenarioEngine`. No DOM, no network. 100% line coverage on the engines.                                  |
+| `@loan-ledger/ui`        | Shared Vue 3 components (charts, amortization, scenarios, edit form, CSV import) and the `useLoanStore` / `useMappingsStore` Pinia stores. Consumed by both targets. |
+| `@loan-ledger/web`       | Standalone browser app: file-picker, FSA/IndexedDB plumbing, `localStorage` mappings store, Cloudflare Pages bundle.                                                 |
+| `@loan-ledger/nextcloud` | Nextcloud app: PHP `IRootFolder` adapter, OCS API, Vue SPA bound to OCS-backed sources, shared `.mappings.yaml` for cross-account sync.                              |
+
+Bug fixes and features in `@core` and `@ui` land in both targets at once.
 
 Pre-commit hooks run Prettier, ESLint, Stylelint, and editorconfig-checker on staged files (Lefthook). Pre-push runs typecheck and Vitest across the workspace.
 
+## Testing with Nextcloud
+
+The `make nc-dev` target spins up a local Nextcloud (33, SQLite, admin/admin) at `http://localhost:8080` with this repo bind-mounted as the `loanledger` app. You don't need a host PHP install; everything runs in containers.
+
+```bash
+make nc-install      # composer install (one-time, runs inside docker)
+make nc-build        # build the Vue bundle into js/ and css/
+make nc-dev          # docker compose up — Nextcloud boots in ~30s
+make nc-dev-enable   # occ app:enable loanledger inside the container
+```
+
+Open `http://localhost:8080` (admin / admin), then **Apps menu → Loan Ledger**. The first time you visit, the configured folder (`/Ledgers/` by default) is empty — go to **Files**, create the `Ledgers` folder, and drop a `.loan.yaml` into it. Reload the app to see it in the list.
+
+Useful cycle commands:
+
+```bash
+make nc-build        # rebuild Vue bundle after frontend edits — refresh the browser
+make nc-dev-logs     # tail container logs
+make nc-dev-down     # tear it all down (drops the volume; user data is lost)
+```
+
+PHP / Vue iteration is hot in the sense that bind-mounting picks up file changes immediately. The Vue bundle does need a rebuild after edits; the PHP side does not. To clear OCS / template caches inside the container after PHP changes:
+
+```bash
+docker compose -f packages/nextcloud/dev/docker-compose.yml exec --user www-data \
+  nextcloud php occ maintenance:repair --include-expensive
+```
+
+### Verifying cross-account sharing
+
+Cross-account sharing is the entire reason for the Nextcloud target — the goal is "drop a `.loan.yaml` somewhere shared and your partner sees the same numbers."
+
+1. Create a second user in Nextcloud (top-right avatar → **Users**).
+2. As `admin`, share the `Ledgers` folder with that user.
+3. Log out, log in as the other user, accept the share. The folder lands at `/Ledgers/` on their side too.
+4. Open **Loan Ledger** as the second user. Same loan, same chart, same numbers.
+5. Edit a scenario or import a payment, save. Switch back to `admin` — the change is there.
+
+If user A and user B edit the same loan at the same time, the second `Save` returns `412 Precondition Failed`; the UI shows a "file changed externally" banner so you don't silently clobber each other's changes. That's wired through the `If-Match: <mtime>` header on every PUT.
+
+### Without docker
+
+If you'd rather run against an existing Nextcloud install:
+
+1. `make nc-install && make nc-build` to populate `vendor/`, `js/`, and `css/`.
+2. Copy or symlink `packages/nextcloud/` into your Nextcloud's `apps/` (or `custom_apps/`) directory as `loanledger`.
+3. `php occ app:enable loanledger`.
+4. Visit the Loan Ledger entry in the apps sidebar and follow the same setup steps.
+
+PHP unit tests work the same way — `make nc-test` runs against `nextcloud/ocp` interface stubs without booting a real Nextcloud.
+
 ## CI and releases
 
-GitLab CI (`.gitlab-ci.yml`) runs install → lint/typecheck/test → build → deploy. The `deploy:cloudflare` job pushes the static bundle to Cloudflare Pages on every push to `main` (needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as masked variables).
+GitLab CI (`.gitlab-ci.yml`) runs install → lint/typecheck/test → build → deploy on every push. The JS pipeline is always-on; the `ci-nextcloud-php-test` and `ci-nextcloud-php-lint` jobs run on a `php:8.2-cli` image and are gated by `changes: packages/nextcloud/**/*`, so JS-only commits don't pay the PHP install cost. The `deploy:cloudflare` job pushes the standalone web bundle to Cloudflare Pages on every push to `main` (needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as masked variables).
 
 ## Contributing
 
