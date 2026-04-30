@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import {
+  AmortizationTable,
+  BalanceChart,
+  CsvImportDialog,
+  EquityGauge,
+  format as fmt,
+  formatMonthFullYear,
+  formatMonthLabel,
+  LoanEditForm,
+  ScenariosPanel,
+  useLoanStore,
+} from '@loan-ledger/ui';
 import { computed, ref, watchEffect } from 'vue';
-import BalanceChart from './charts/BalanceChart.vue';
-import EquityGauge from './charts/EquityGauge.vue';
-import { formatMonthFullYear, formatMonthLabel } from './charts/scale.js';
-import AmortizationTable from './components/AmortizationTable.vue';
-import CsvImportDialog from './components/CsvImportDialog.vue';
 import FilePicker from './components/FilePicker.vue';
-import LoanEditForm from './components/LoanEditForm.vue';
-import ScenariosPanel from './components/ScenariosPanel.vue';
-import * as fmt from './format.js';
-import { useLoanStore } from './stores/loan.js';
 
 const store = useLoanStore();
 const importOpen = ref(false);

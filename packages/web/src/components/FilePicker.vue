@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { FallbackSource, useLoanStore } from '@loan-ledger/ui';
 import { ref } from 'vue';
-import { pickLoanFile } from '../composables/useFileHandle.js';
-import { FallbackSource } from '../source/fallbackSource.js';
+import { fsaSupported, pickLoanFile } from '../composables/useFileHandle.js';
 import { FsaSource } from '../source/fsaSource.js';
-import { useLoanStore } from '../stores/loan.js';
 
 const store = useLoanStore();
+const fsaAvailable = fsaSupported();
 const fileInput = ref<HTMLInputElement | null>(null);
 const error = ref<string | null>(null);
 
@@ -39,7 +39,7 @@ async function onFileChosen(event: Event) {
       type="button"
       class="primary"
       data-tooltip="Opens a .loan.yaml file from your computer. Nothing is uploaded, parsing and math run entirely in your browser."
-      @click="store.fsaAvailable ? openViaFSA() : openFallback()"
+      @click="fsaAvailable ? openViaFSA() : openFallback()"
     >
       Load loan
     </button>

@@ -94,19 +94,7 @@ export async function writeToHandle(handle: FsaFileHandle, text: string): Promis
   await writable.close();
 }
 
-/** Fallback save path: trigger a download of the text as a file. */
-export function downloadText(filename: string, text: string): void {
-  const blob = new Blob([text], { type: 'application/x-yaml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+export { downloadText } from '@loan-ledger/ui';
 
 export async function forgetHandle(): Promise<void> {
   await del(HANDLE_KEY);

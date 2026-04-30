@@ -15,8 +15,8 @@ import {
 } from '@loan-ledger/core';
 import { defineStore } from 'pinia';
 import { computed, ref, shallowRef } from 'vue';
-import { downloadText, fsaSupported } from '../composables/useFileHandle.js';
 import { DemoSource } from '../source/demoSource.js';
+import { downloadText } from '../util/download.js';
 
 export const useLoanStore = defineStore('loan', () => {
   // --- Source + loan state --------------------------------------------------
@@ -306,8 +306,6 @@ export const useLoanStore = defineStore('loan', () => {
     hasUnsavedChanges,
     canWriteToFile,
     fileName,
-    // capabilities
-    fsaAvailable: fsaSupported(),
     // actions
     loadDemo,
     attachSource,

@@ -1,24 +1,29 @@
 {
-  "name": "@loan-ledger/web",
+  "name": "@loan-ledger/ui",
   "version": "0.0.0",
   "private": true,
-  "description": "Standalone browser app for Loan Ledger.",
+  "description": "Shared Vue components, charts, and stores for Loan Ledger targets.",
   "license": "MPL-2.0",
   "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./components/*": "./src/components/*",
+    "./charts/*": "./src/charts/*",
+    "./stores/*": "./src/stores/*",
+    "./source/*": "./src/source/*",
+    "./util/*": "./src/util/*",
+    "./format": "./src/format.ts"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint ."
   },
   "dependencies": {
     "@loan-ledger/core": "workspace:*",
-    "@loan-ledger/ui": "workspace:*",
     "@phosphor-icons/vue": "^2.2.1",
-    "idb-keyval": "^6.2.2",
     "pinia": "^3.0.4",
     "vue": "^3.5.33"
   },

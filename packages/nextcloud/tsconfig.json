@@ -7,7 +7,8 @@
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@loan-ledger/core": ["../core/src/index.ts"]
+      "@loan-ledger/core": ["../core/src/index.ts"],
+      "@loan-ledger/ui": ["../ui/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "*.config.ts"]

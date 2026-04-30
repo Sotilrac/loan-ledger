@@ -39,6 +39,7 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@loan-ledger/core': fileURLToPath(new URL('../core/src/index.ts', import.meta.url)),
+      '@loan-ledger/ui': fileURLToPath(new URL('../ui/src/index.ts', import.meta.url)),
     },
   },
   build: {
