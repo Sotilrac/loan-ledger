@@ -1,6 +1,6 @@
 export * from './model/types.js';
 export * from './engine/types.js';
-export type { LoanSource } from './source/types.js';
+export type { LoanSource, MappingsSource } from './source/types.js';
 
 export { validateLoan, validateMappings } from './io/validate.js';
 export {

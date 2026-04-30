@@ -1,38 +1,52 @@
-import type { CsvMapping } from '@loan-ledger/core';
+import type { CsvMapping, MappingsFile, MappingsSource } from '@loan-ledger/core';
+import { parseMappingsYaml, serializeMappingsYaml } from '@loan-ledger/core';
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
+import { LocalStorageMappingsSource } from '../source/localStorageMappingsSource.js';
 
-const STORAGE_KEY = '@loan-ledger/web:mappings';
+let activeSource: MappingsSource = new LocalStorageMappingsSource();
 
-function loadFromStorage(): CsvMapping[] {
-  if (typeof localStorage === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed as CsvMapping[];
-  } catch {
-    return [];
-  }
+/**
+ * Swap the mappings source. The Nextcloud build calls this at startup to
+ * point the store at an OCS-backed `.mappings.yaml`. Tests can use it to
+ * inject a fake. Has no effect on stores that have already loaded.
+ */
+export function setMappingsSource(source: MappingsSource): void {
+  activeSource = source;
 }
 
-function saveToStorage(mappings: CsvMapping[]): void {
-  if (typeof localStorage === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mappings));
-  } catch {
-    /* quota or private mode — swallow */
-  }
+function loadFromYaml(yaml: string): CsvMapping[] {
+  if (!yaml.trim()) return [];
+  const result = parseMappingsYaml(yaml);
+  if (!result.ok) return [];
+  return result.value.mappings;
 }
 
 export const useMappingsStore = defineStore('mappings', () => {
-  const mappings = ref<CsvMapping[]>(loadFromStorage());
+  const source = ref<MappingsSource>(activeSource);
+  const mappings = ref<CsvMapping[]>([]);
+  const loaded = ref<boolean>(false);
+
+  async function hydrate(): Promise<void> {
+    const yaml = await source.value.read();
+    mappings.value = loadFromYaml(yaml);
+    // Let the deep watcher fire on the hydration assignment with `loaded`
+    // still false, so it bails before the gate flips. Without this, we'd
+    // immediately write back the YAML we just read.
+    await nextTick();
+    loaded.value = true;
+  }
+
+  // Kick off the read; tests that need it deterministically can `await
+  // mappingsStore.hydrated`.
+  const hydrated = hydrate();
 
   watch(
     mappings,
     (next) => {
-      saveToStorage(next);
+      if (!loaded.value) return;
+      const file: MappingsFile = { schema_version: 1, mappings: next };
+      void source.value.write(serializeMappingsYaml(file));
     },
     { deep: true },
   );
@@ -51,5 +65,5 @@ export const useMappingsStore = defineStore('mappings', () => {
     return mappings.value.find((m) => m.name === name);
   }
 
-  return { mappings, upsert, remove, getByName };
+  return { mappings, source, loaded, hydrated, upsert, remove, getByName };
 });
