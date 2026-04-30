@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>loanledger</id>
+	<name>Loan Ledger</name>
+	<summary>Mortgage and loan dashboard backed by human-readable YAML files.</summary>
+	<description><![CDATA[
+Loan Ledger reads `.loan.yaml` files from a folder you choose (default: `/Ledgers/`)
+and renders an interactive amortization, scenario, and payment-tracking UI.
+
+Files stay as plain YAML in your Nextcloud, so you can hand-edit them, version
+them in git, and share them with collaborators using normal Nextcloud sharing.
+All loan math runs entirely in your browser; the server only reads and writes
+the underlying files.
+	]]></description>
+	<version>0.1.0</version>
+	<licence>mpl-2.0</licence>
+	<author homepage="https://asmat.ca">Carlos Asmat</author>
+	<namespace>LoanLedger</namespace>
+	<category>office</category>
+	<bugs>https://gitlab.com/sotilrac/loan-ledger/-/issues</bugs>
+	<repository type="git">https://gitlab.com/sotilrac/loan-ledger.git</repository>
+	<dependencies>
+		<php min-version="8.2" max-version="8.5"/>
+		<nextcloud min-version="31" max-version="33"/>
+	</dependencies>
+	<navigations>
+		<navigation>
+			<name>Loan Ledger</name>
+			<route>loanledger.page.index</route>
+		</navigation>
+	</navigations>
+</info>

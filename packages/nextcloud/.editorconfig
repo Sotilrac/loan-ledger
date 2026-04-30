@@ -1,0 +1,4 @@
+; Nextcloud convention: tabs for PHP (PSR-12) and XML config files.
+[*.{php,xml}]
+indent_style = tab
+indent_size = 4

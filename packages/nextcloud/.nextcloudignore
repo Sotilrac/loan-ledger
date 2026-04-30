@@ -1,0 +1,22 @@
+# Files excluded from the App Store / `make appstore` archive.
+.editorconfig
+.gitattributes
+.gitignore
+.github/
+.php-cs-fixer.cache
+.php-cs-fixer.dist.php
+.psalm.cache/
+.phpunit.cache/
+.idea/
+.vscode/
+node_modules/
+psalm.xml
+phpunit.xml
+tests/
+vendor-bin/
+src/
+package.json
+package-lock.json
+pnpm-lock.yaml
+vite.config.ts
+tsconfig.json

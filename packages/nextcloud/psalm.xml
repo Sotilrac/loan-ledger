@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<psalm
+	xmlns="https://getpsalm.org/schema/config"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://getpsalm.org/schema/config vendor-bin/psalm/vendor/vimeo/psalm/config.xsd"
+	errorLevel="3"
+	resolveFromConfigFile="true"
+	findUnusedBaselineEntry="true"
+	findUnusedCode="false"
+>
+	<projectFiles>
+		<directory name="lib"/>
+		<directory name="tests"/>
+		<ignoreFiles>
+			<directory name="vendor"/>
+			<directory name="vendor-bin"/>
+		</ignoreFiles>
+	</projectFiles>
+	<extraFiles>
+		<directory name="vendor/nextcloud/ocp"/>
+	</extraFiles>
+	<stubs>
+		<file name="vendor/nextcloud/ocp/stub.phpstub"/>
+	</stubs>
+</psalm>

@@ -75,6 +75,40 @@ test:
     - pnpm test
   coverage: '/Statements\s+:\s+(\d+\.\d+)%/'
 
+# PHP-side checks for the Nextcloud app. Runs in its own image so the JS
+# pipeline above doesn't pay PHP install costs. Job is skipped on commits
+# that don't touch the Nextcloud package.
+.nc-php-base: &nc-php-base
+  image: php:8.2-cli
+  before_script:
+    - apt-get update -q
+    - apt-get install -y -q git unzip libzip-dev
+    - docker-php-ext-install zip
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - cd packages/nextcloud
+    - composer install --no-progress
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      changes:
+        - packages/nextcloud/**/*
+        - .gitlab-ci.yml
+    - if: $CI_COMMIT_TAG
+
+ci-nextcloud-php-test:
+  stage: check
+  needs: []
+  <<: *nc-php-base
+  script:
+    - composer test
+
+ci-nextcloud-php-lint:
+  stage: check
+  needs: []
+  <<: *nc-php-base
+  script:
+    - composer cs:check
+    - composer psalm
+
 build:
   stage: build
   needs: [lint, typecheck, test]

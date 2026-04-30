@@ -6,6 +6,12 @@ pnpm-lock.yaml
 **/.vite
 LICENSE
 
+# Composer-managed (Nextcloud app)
+packages/nextcloud/vendor/
+packages/nextcloud/vendor-bin/**/vendor/
+packages/nextcloud/composer.lock
+packages/nextcloud/vendor-bin/**/composer.lock
+
 # Tool-managed
 .claude/
 
