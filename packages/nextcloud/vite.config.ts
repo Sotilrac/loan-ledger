@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, URL } from 'node:url';
 import vue from '@vitejs/plugin-vue';
@@ -17,6 +17,12 @@ import { defineConfig, type Plugin } from 'vite';
  * `configResolved`) rather than `import.meta.url`, because the latter
  * points at the bundled config file's temp location and produces wrong
  * absolute paths.
+ *
+ * The plugin never deletes the `css/` directory itself, only the files
+ * inside. Docker bind mounts don't reliably propagate inode changes when
+ * a directory is removed and recreated — the container keeps the stale
+ * inode and reports "No such directory" indefinitely until the next
+ * container restart. Copy + unlink, never rm + mkdir.
  */
 const splitCssOut = (): Plugin => {
   let projectRoot = '';
@@ -31,13 +37,14 @@ const splitCssOut = (): Plugin => {
         ['js/loanledger-main.css', 'css/loanledger-main.css'],
         ['js/loanledger-main.css.map', 'css/loanledger-main.css.map'],
       ];
-      rmSync(resolve(projectRoot, 'css'), { recursive: true, force: true });
+      mkdirSync(resolve(projectRoot, 'css'), { recursive: true });
       for (const [src, dest] of moves) {
         const srcPath = resolve(projectRoot, src);
         const destPath = resolve(projectRoot, dest);
         if (!existsSync(srcPath)) continue;
         mkdirSync(dirname(destPath), { recursive: true });
-        renameSync(srcPath, destPath);
+        copyFileSync(srcPath, destPath);
+        unlinkSync(srcPath);
       }
     },
   };
