@@ -554,7 +554,7 @@ svg {
   top: 2rem;
   right: 1rem;
   background: var(--ll-paper-raised);
-  padding: 0.375rem 0.625rem;
+  padding: 0.25rem 0.5rem;
   min-width: 160px;
   box-shadow: 0 2px 8px rgb(var(--ll-shadow-rgb) / 6%);
   pointer-events: none;
@@ -569,7 +569,7 @@ svg {
     position: static;
     min-width: 0;
     margin: 0 0 0.5rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.25rem 0.5rem;
     box-shadow: none;
     background: var(--ll-paper-sunk);
   }
