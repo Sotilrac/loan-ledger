@@ -149,3 +149,42 @@ dialog[open] {
   margin: auto;
   inset: 0;
 }
+
+/*
+ * Below the layout collapse breakpoint (mid stacks chart + scenarios), let
+ * the page scroll as a whole instead of the amortization table being a
+ * fixed-height pane with internal scroll. This matches the standalone web
+ * app's collapsed layout.
+ */
+@media (width <= 64rem) {
+  .ll-shell {
+    height: auto;
+    overflow: visible;
+  }
+
+  .ll-detail__ledger {
+    flex: none;
+  }
+
+  .ll-detail__ledger .scroll {
+    max-height: none;
+    overflow: visible;
+    border-bottom: none;
+  }
+
+  /*
+   * @ui's chart tooltip switches to static-above-chart at < 900px to match
+   * the standalone's collapse. Nextcloud collapses at 1024px (chart and
+   * scenarios stack), so the tooltip needs the same static-above treatment
+   * earlier. `!important` because @ui's scoped `.chart-tooltip[data-v-X]`
+   * has the same specificity as our descendant selector and bundle order
+   * isn't reliable.
+   */
+  .ll-detail__chart .chart-tooltip {
+    position: static !important;
+    min-width: 0 !important;
+    margin: 0 0 0.5rem !important;
+    background: var(--ll-paper-sunk) !important;
+    box-shadow: none !important;
+  }
+}

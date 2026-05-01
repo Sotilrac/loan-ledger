@@ -108,11 +108,14 @@ function onHover(period: number | null) {
 }
 
 function tableScrollsInternally(): boolean {
-  // On narrow viewports the amortization table is laid out full-length and the
-  // page scrolls as a whole. In that mode we don't want auto-scroll-on-hover
-  // yanking the page around.
-  if (typeof window === 'undefined') return true;
-  return window.innerWidth >= 900;
+  // Auto-scroll-on-hover only makes sense when the table actually has its
+  // own scroll container. On narrow viewports the host CSS releases the
+  // overflow so the whole page scrolls instead, in which case yanking the
+  // page on hover would be jarring. Detect by reading the DOM rather than
+  // a hardcoded breakpoint, so it adapts to any layout the host applies.
+  const el = scrollEl.value;
+  if (!el) return false;
+  return el.scrollHeight > el.clientHeight + 1;
 }
 
 watch(
