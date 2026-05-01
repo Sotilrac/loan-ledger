@@ -355,15 +355,13 @@ async function browseForOnboardPath(): Promise<void> {
       <div v-else-if="folderMissing" class="ll-empty ll-empty--centered">
         <h2 class="ll-onboard__title">Welcome to Loan Ledger</h2>
         <p class="ll-onboard__lede">
-          Loan Ledger is a local-first mortgage and loan dashboard. Each loan lives in your
-          Nextcloud as a plain-text <code>.loan.yaml</code> file you can hand-edit, version, and
-          <strong>share with anyone the folder is shared with</strong>, so your partner sees the
-          same balance, scenarios, and amortization without needing a separate account.
+          See where every payment really goes, watch your balance curve into the future, and run
+          side-by-side scenarios to find the cheapest way to pay off your loan.
         </p>
-        <p class="ll-onboard__lede">
-          To get started, the app needs a folder inside your Nextcloud where these files will live.
-          The folder <code>{{ settings.folders[0] }}</code> doesn't exist yet, so create it now (you
-          can rename, move, or share it from the Files app whenever you want).
+        <p class="ll-onboard__lede ll-onboard__lede--muted">
+          Loans are stored as plain <code>.loan.yaml</code> files in a folder of your choice. Share
+          that folder in Nextcloud and a partner sees the same numbers, no extra account needed.
+          <code>{{ settings.folders[0] }}</code> doesn't exist yet, so create it to start.
         </p>
         <p v-if="folderCreateError" class="ll-error" style="margin: 0.5rem 0 0">
           {{ folderCreateError }}
@@ -541,6 +539,11 @@ async function browseForOnboardPath(): Promise<void> {
   max-width: 36rem;
   color: var(--ll-ink-soft);
   margin: 0;
+}
+
+.ll-onboard__lede--muted {
+  font-size: 0.875rem;
+  color: var(--ll-ink-muted);
 }
 
 .ll-onboard__path {
