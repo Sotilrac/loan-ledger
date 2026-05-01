@@ -130,3 +130,13 @@
   overflow: auto;
   white-space: pre;
 }
+
+/*
+ * Nextcloud's `core/css/server.css` blanket-applies `dialog { display: block }`,
+ * which overrides the user-agent default that hides closed `<dialog>` elements.
+ * Restore the default so `<CsvImportDialog>` only appears when `showModal()`
+ * has actually been called.
+ */
+dialog:not([open]) {
+  display: none;
+}

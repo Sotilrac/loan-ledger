@@ -362,15 +362,13 @@ watch(() => props.fileId, load);
 }
 
 .ll-detail__chart :deep(figure) {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
   margin: 0;
 }
 
 .ll-detail__chart :deep(svg) {
   width: 100%;
   height: auto;
+  display: block;
 }
 
 /* Ledger fills the remaining viewport height; only the table scrolls. */
