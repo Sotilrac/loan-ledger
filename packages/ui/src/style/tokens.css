@@ -37,6 +37,10 @@
   --ll-font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 }
 
+/*
+ * Dark mode via system preference. Active in standalone deployments where
+ * no host overrides the theme.
+ */
 @media (prefers-color-scheme: dark) {
   :root {
     --ll-paper: #16140f;
@@ -63,6 +67,68 @@
 
     --ll-shadow-rgb: 255 255 255;
   }
+}
+
+/*
+ * Nextcloud signals its active theme via `body[data-theme-<id>]`. When
+ * present, follow NC instead of the system preference: NC dark forces our
+ * dark palette regardless of OS, and NC light forces our light palette
+ * regardless of OS. Unaffected when neither attribute is present (i.e.
+ * the standalone web app).
+ */
+body[data-theme-dark],
+body[data-theme-dark-highcontrast] {
+  --ll-paper: #16140f;
+  --ll-paper-sunk: #1f1d17;
+  --ll-paper-raised: #28251e;
+
+  --ll-ink: #f2eee5;
+  --ll-ink-soft: #d4cfc3;
+  --ll-ink-muted: #8e8a7f;
+  --ll-ink-faint: #4a4740;
+
+  --ll-accent: #7ba3d0;
+  --ll-accent-hover: #9bb8dd;
+  --ll-accent-soft: #1f2a3a;
+
+  --ll-mark: #e8a058;
+  --ll-mark-hover: #f0b574;
+  --ll-mark-soft: #3a2a18;
+
+  --ll-positive: #7ab091;
+  --ll-negative: #c28070;
+  --ll-positive-soft: #1f2e25;
+  --ll-negative-soft: #2e201c;
+
+  --ll-shadow-rgb: 255 255 255;
+}
+
+body[data-theme-default],
+body[data-theme-light],
+body[data-theme-light-highcontrast] {
+  --ll-paper: #faf7f2;
+  --ll-paper-sunk: #f3efe8;
+  --ll-paper-raised: #fff;
+
+  --ll-ink: #1a1915;
+  --ll-ink-soft: #3d3b35;
+  --ll-ink-muted: #7a766d;
+  --ll-ink-faint: #b8b4aa;
+
+  --ll-accent: #1f3a5f;
+  --ll-accent-hover: #284a78;
+  --ll-accent-soft: #e3e8f0;
+
+  --ll-mark: #d97e2b;
+  --ll-mark-hover: #b86820;
+  --ll-mark-soft: #f9e8d4;
+
+  --ll-positive: #3f6d4e;
+  --ll-negative: #8c3a2e;
+  --ll-positive-soft: #e4ede6;
+  --ll-negative-soft: #f2e1dd;
+
+  --ll-shadow-rgb: 0 0 0;
 }
 
 *,
