@@ -360,6 +360,14 @@ function closeEditor() {
   overflow: auto;
   border-top: 1px solid var(--ll-ink-faint);
   border-bottom: 1px solid var(--ll-ink-faint);
+
+  /*
+   * Reserve the scrollbar gutter even when no scrollbar is showing, so
+   * the sticky thead's width always matches the tbody. Without this the
+   * header sits ~1px narrower than the body rows when the scrollbar
+   * appears.
+   */
+  scrollbar-gutter: stable;
 }
 
 @media (width < 900px) {
