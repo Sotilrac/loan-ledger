@@ -99,6 +99,30 @@ class FileWriterTest extends TestCase {
 		$this->writer->createLoan('alice', 'Cabin', 'yaml');
 	}
 
+	public function testCreateLoanCreatesInExplicitFolderWhenProvided(): void {
+		$folder = $this->createMock(Folder::class);
+		$folder->method('nodeExists')->willReturn(false);
+		$file = $this->createMock(File::class);
+		$file->method('getId')->willReturn(7);
+		$file->method('getPath')->willReturn('/alice/files/Other/cabin.loan.yaml');
+		$file->method('getMTime')->willReturn(0);
+		$file->method('getPermissions')->willReturn(31);
+		$folder
+			->expects(self::once())
+			->method('newFile')
+			->with('cabin.loan.yaml', 'yaml')
+			->willReturn($file);
+
+		$this->scanner
+			->expects(self::once())
+			->method('getFolder')
+			->with('alice', '/Other')
+			->willReturn($folder);
+		$this->scanner->expects(self::never())->method('getPrimaryFolder');
+
+		$this->writer->createLoan('alice', 'Cabin', 'yaml', '/Other');
+	}
+
 	public function testCreateLoanFallsBackToGenericSlugForUnusableName(): void {
 		$folder = $this->createMock(Folder::class);
 		$folder->method('nodeExists')->willReturn(false);

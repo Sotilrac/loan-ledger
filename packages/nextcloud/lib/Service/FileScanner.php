@@ -124,14 +124,6 @@ class FileScanner {
 		return $folder;
 	}
 
-	/**
-	 * @deprecated Kept for compatibility with existing tests that mock
-	 * a single folder. Prefer `getPrimaryFolder()` or `getFolder()`.
-	 */
-	public function getLedgersFolder(string $userId): Folder {
-		return $this->getPrimaryFolder($userId);
-	}
-
 	private function resolveFolder(Folder $userFolder, string $path): ?Folder {
 		try {
 			$node = $userFolder->get($path);

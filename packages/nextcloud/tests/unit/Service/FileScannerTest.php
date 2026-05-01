@@ -80,6 +80,24 @@ class FileScannerTest extends TestCase {
 		self::assertSame([], $this->scanner->listLoans('alice'));
 	}
 
+	public function testGetMissingFoldersReportsConfiguredPathsThatDontResolve(): void {
+		$userFolder = $this->createMock(Folder::class);
+		$userFolder
+			->method('get')
+			->with('/Ledgers')
+			->willThrowException(new NotFoundException());
+		$this->rootFolder->method('getUserFolder')->with('alice')->willReturn($userFolder);
+
+		self::assertSame(['/Ledgers'], $this->scanner->getMissingFolders('alice'));
+	}
+
+	public function testGetMissingFoldersIsEmptyWhenAllResolve(): void {
+		$ledgers = $this->mockFolder([]);
+		$this->wireUserFolder($ledgers);
+
+		self::assertSame([], $this->scanner->getMissingFolders('alice'));
+	}
+
 	public function testGetPrimaryFolderThrowsWhenMissing(): void {
 		$userFolder = $this->createMock(Folder::class);
 		$userFolder
