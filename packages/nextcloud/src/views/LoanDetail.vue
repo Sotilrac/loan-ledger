@@ -82,7 +82,6 @@ watch(() => props.fileId, load);
     <template v-else-if="loaded">
       <header class="ll-detail__header">
         <div class="ll-detail__title-block">
-          <p class="eyebrow">{{ loan.fileName }}</p>
           <h2 class="ll-detail__title">{{ loan.activeLoan.property.name }}</h2>
           <p class="caption">
             Purchased {{ formatMonthFullYear(loan.activeLoan.property.purchase_date) }} for

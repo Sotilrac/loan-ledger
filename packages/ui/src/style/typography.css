@@ -19,6 +19,27 @@
   font-size: 0.875rem;
 }
 
+/* Inline byline inside an eyebrow ("Loan Ledger by Carlos Asmat"). */
+.eyebrow .by {
+  margin-left: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ll-ink-muted);
+}
+
+.eyebrow .by a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ll-ink-faint);
+}
+
+.eyebrow .by a:hover {
+  color: var(--ll-accent);
+  border-bottom-color: var(--ll-accent);
+}
+
 .supporting {
   font-family: var(--ll-font-sans);
   font-size: 1.5625rem;

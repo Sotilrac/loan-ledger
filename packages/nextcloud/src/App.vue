@@ -24,8 +24,14 @@ onMounted(async () => {
   folderDraft.value = settings.folder;
 });
 
-function onSelect(event: Event): void {
-  const value = (event.target as HTMLSelectElement).value;
+async function onSelect(event: Event): Promise<void> {
+  const target = event.target as HTMLSelectElement;
+  const value = target.value;
+  if (value === '__new__') {
+    target.value = String(loansStore.selectedFileId ?? '');
+    await onNew();
+    return;
+  }
   loansStore.select(value ? Number(value) : null);
 }
 
@@ -73,19 +79,17 @@ async function onSave(): Promise<void> {
       <div class="ll-header__controls">
         <template v-if="!loan.isEditing">
           <select
-            v-if="hasLoans"
             class="ll-select"
             :value="loansStore.selectedFileId ?? ''"
-            data-tooltip="Open one of the loans in your Ledgers folder"
+            data-tooltip="Open one of the loans in your Ledgers folder, or create a new one"
             @change="onSelect"
           >
+            <option v-if="!hasLoans" value="" disabled>No loans yet</option>
             <option v-for="entry in loansStore.entries" :key="entry.fileid" :value="entry.fileid">
               {{ entry.path.split('/').pop() }}
             </option>
+            <option value="__new__">+ New loan…</option>
           </select>
-          <button v-else type="button" class="ll-btn ll-btn--primary" @click="onNew">
-            New loan
-          </button>
 
           <button
             v-if="loansStore.selectedFileId !== null"
@@ -197,7 +201,6 @@ async function onSave(): Promise<void> {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid var(--ll-ink-faint);
   flex: none;
   flex-wrap: wrap;
 }
