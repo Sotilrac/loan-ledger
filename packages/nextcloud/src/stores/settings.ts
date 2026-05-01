@@ -8,8 +8,18 @@ function readInitialFolders(): string[] {
   const w = window as unknown as {
     OCP?: { InitialState?: { loadState: (app: string, key: string) => unknown } };
   };
-  const raw = w.OCP?.InitialState?.loadState?.('loanledger', 'folder');
-  if (typeof raw === 'string' && raw.trim() !== '') return [raw];
+  // `loadState` throws when the key is missing rather than returning null;
+  // wrap in try/catch so a fresh install doesn't blow up on boot.
+  let raw: unknown;
+  try {
+    raw = w.OCP?.InitialState?.loadState?.('loanledger', 'folders');
+  } catch {
+    raw = null;
+  }
+  if (Array.isArray(raw)) {
+    const cleaned = raw.filter((s): s is string => typeof s === 'string' && s.trim() !== '');
+    if (cleaned.length > 0) return cleaned;
+  }
   return [DEFAULT_FOLDER];
 }
 
