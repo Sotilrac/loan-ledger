@@ -16,7 +16,8 @@
     "./util/*": "./src/util/*",
     "./format": "./src/format.ts",
     "./style/tokens.css": "./src/style/tokens.css",
-    "./style/typography.css": "./src/style/typography.css"
+    "./style/typography.css": "./src/style/typography.css",
+    "./style/base.css": "./src/style/base.css"
   },
   "scripts": {
     "test": "vitest run --passWithNoTests",
