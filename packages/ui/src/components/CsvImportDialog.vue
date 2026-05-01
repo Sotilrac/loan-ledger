@@ -417,11 +417,19 @@ select {
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--ll-ink-faint);
+  border-radius: 0;
   color: var(--ll-ink);
   font-feature-settings:
     'tnum' 1,
     'lnum' 1;
   font-variant-numeric: tabular-nums lining-nums;
+
+  /*
+   * Override Nextcloud's `core/css/inputs.scss` which sets `width: 130px;
+   * min-height: var(--default-clickable-area)` on every input/select.
+   */
+  width: 100%;
+  min-height: 0;
 }
 
 input:focus,
