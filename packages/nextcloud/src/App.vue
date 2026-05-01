@@ -214,7 +214,7 @@ async function onSave(): Promise<void> {
 
 .ll-select {
   font: inherit;
-  padding: 0.375rem 2rem 0.375rem 0.75rem;
+  padding: 0.375rem 2.5rem 0.375rem 0.75rem;
   border: 1px solid var(--ll-ink-faint);
   border-radius: 4px;
   background-color: var(--ll-paper-raised, #fff);
