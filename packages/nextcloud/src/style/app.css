@@ -237,9 +237,14 @@ dialog[open] {
     flex: none;
   }
 
+  /*
+   * Release vertical overflow on the table wrapper so the page scrolls,
+   * but keep horizontal scroll on the table itself so wide rows don't
+   * push the page wider than the viewport.
+   */
   .ll-detail__ledger .scroll {
     max-height: none;
-    overflow: visible;
+    overflow: auto visible;
     border-bottom: none;
   }
 
