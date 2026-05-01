@@ -102,6 +102,15 @@
   display: flex;
   gap: 0.125rem;
   flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+.scenarios li.active .actions,
+.scenarios li.editing .actions,
+.scenario-card:hover .actions,
+.scenario-card:focus-within .actions {
+  opacity: 1;
 }
 
 .scenario-name {

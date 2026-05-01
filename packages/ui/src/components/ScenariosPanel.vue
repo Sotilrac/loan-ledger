@@ -76,12 +76,7 @@ function removeScenario(id: string) {
         >
           <div class="scenario-top">
             <p class="scenario-name">{{ scenario.name }}</p>
-            <div
-              v-if="
-                store.activeScenarioId === scenario.id || store.editingScenarioId === scenario.id
-              "
-              class="actions"
-            >
+            <div class="actions">
               <button
                 type="button"
                 class="icon-btn"

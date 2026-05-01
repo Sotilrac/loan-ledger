@@ -282,8 +282,8 @@ watch(
 <template>
   <figure class="chart">
     <figcaption class="label">Balance over time</figcaption>
-    <div v-if="hoverPoint" class="tooltip">
-      <p class="tooltip-date">{{ formatMonthLabel(hoverPoint.date) }}</p>
+    <div v-if="hoverPoint" class="chart-tooltip">
+      <p class="chart-tooltip__date">{{ formatMonthLabel(hoverPoint.date) }}</p>
       <dl>
         <div>
           <dt>Scheduled</dt>
@@ -544,7 +544,12 @@ svg {
   }
 }
 
-.tooltip {
+/*
+ * `.chart-tooltip` (not `.tooltip`) so it doesn't collide with Nextcloud's
+ * own `.tooltip` class which forces `opacity: 0` on a sibling tooltip
+ * pattern.
+ */
+.chart-tooltip {
   position: absolute;
   top: 2rem;
   right: 1rem;
@@ -560,7 +565,7 @@ svg {
   it, the DOM already has it between the caption and the SVG, so switching
   to static positioning is enough. */
 @media (width < 900px) {
-  .tooltip {
+  .chart-tooltip {
     position: static;
     min-width: 0;
     margin: 0 0 0.5rem;
@@ -569,48 +574,48 @@ svg {
     background: var(--ll-paper-sunk);
   }
 
-  .tooltip dl {
+  .chart-tooltip dl {
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 0.375rem 0.75rem;
   }
 
-  .tooltip div {
+  .chart-tooltip div {
     align-items: flex-start;
     gap: 0;
   }
 
-  .tooltip-date {
+  .chart-tooltip__date {
     font-size: 0.8125rem;
     margin: 0 0 0.25rem;
   }
 }
 
-.tooltip-date {
+.chart-tooltip__date {
   font-family: var(--ll-font-serif);
   font-size: 0.875rem;
   margin: 0 0 0.5rem;
   color: var(--ll-ink);
 }
 
-.tooltip dl {
+.chart-tooltip dl {
   margin: 0;
   display: grid;
   gap: 0.25rem;
 }
 
-.tooltip div {
+.chart-tooltip div {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
 }
 
-.tooltip dt {
+.chart-tooltip dt {
   font-size: 0.75rem;
   color: var(--ll-ink-muted);
   letter-spacing: 0.04em;
 }
 
-.tooltip dd {
+.chart-tooltip dd {
   margin: 0;
   font-size: 0.875rem;
   font-weight: 500;

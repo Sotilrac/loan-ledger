@@ -132,11 +132,20 @@
 }
 
 /*
- * Nextcloud's `core/css/server.css` blanket-applies `dialog { display: block }`,
- * which overrides the user-agent default that hides closed `<dialog>` elements.
- * Restore the default so `<CsvImportDialog>` only appears when `showModal()`
- * has actually been called.
+ * Nextcloud's `core/css/server.css` does two things that break modal
+ * `<dialog>` elements:
+ *   1. Blanket `dialog { display: block }` — overrides the UA default that
+ *      hides a closed dialog. Restore it so `<CsvImportDialog>` only
+ *      appears after `showModal()`.
+ *   2. Blanket `dialog { margin: 0 }` from a CSS reset — kills the UA's
+ *      `margin: auto` that centers a modal dialog inside the viewport,
+ *      so the dialog ends up pinned at the top-left. Force `auto` back.
  */
 dialog:not([open]) {
   display: none;
+}
+
+dialog[open] {
+  margin: auto;
+  inset: 0;
 }
