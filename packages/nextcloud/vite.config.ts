@@ -12,25 +12,36 @@ import { defineConfig, type Plugin } from 'vite';
  * script tag and one stylesheet. After Vite emits, a small `closeBundle`
  * plugin moves the CSS files out of `js/` and into a sibling `css/`
  * directory; rolldown's `assetFileNames` doesn't accept relative paths.
+ *
+ * Path resolution uses Vite's resolved `config.root` (set via
+ * `configResolved`) rather than `import.meta.url`, because the latter
+ * points at the bundled config file's temp location and produces wrong
+ * absolute paths.
  */
-const splitCssOut = (): Plugin => ({
-  name: 'loan-ledger:split-css-out',
-  closeBundle() {
-    const here = fileURLToPath(new URL('.', import.meta.url));
-    const moves: Array<[string, string]> = [
-      ['js/loanledger-main.css', 'css/loanledger-main.css'],
-      ['js/loanledger-main.css.map', 'css/loanledger-main.css.map'],
-    ];
-    rmSync(resolve(here, 'css'), { recursive: true, force: true });
-    for (const [src, dest] of moves) {
-      const srcPath = resolve(here, src);
-      const destPath = resolve(here, dest);
-      if (!existsSync(srcPath)) continue;
-      mkdirSync(dirname(destPath), { recursive: true });
-      renameSync(srcPath, destPath);
-    }
-  },
-});
+const splitCssOut = (): Plugin => {
+  let projectRoot = '';
+  return {
+    name: 'loan-ledger:split-css-out',
+    configResolved(config) {
+      projectRoot = config.root;
+    },
+    closeBundle() {
+      if (!projectRoot) return;
+      const moves: Array<[string, string]> = [
+        ['js/loanledger-main.css', 'css/loanledger-main.css'],
+        ['js/loanledger-main.css.map', 'css/loanledger-main.css.map'],
+      ];
+      rmSync(resolve(projectRoot, 'css'), { recursive: true, force: true });
+      for (const [src, dest] of moves) {
+        const srcPath = resolve(projectRoot, src);
+        const destPath = resolve(projectRoot, dest);
+        if (!existsSync(srcPath)) continue;
+        mkdirSync(dirname(destPath), { recursive: true });
+        renameSync(srcPath, destPath);
+      }
+    },
+  };
+};
 
 export default defineConfig({
   base: '',
