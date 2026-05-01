@@ -409,6 +409,19 @@ async function onCreateFolder(path: string): Promise<void> {
   text-align: center;
 }
 
+.ll-onboard__title {
+  font-family: var(--ll-font-serif);
+  font-size: 1.75rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.ll-onboard__lede {
+  max-width: 36rem;
+  color: var(--ll-ink-soft);
+  margin: 0;
+}
+
 .ll-empty__actions {
   display: flex;
   gap: 0.5rem;
