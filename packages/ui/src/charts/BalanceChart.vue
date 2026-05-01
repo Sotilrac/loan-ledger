@@ -559,6 +559,13 @@ svg {
   box-shadow: 0 2px 8px rgb(var(--ll-shadow-rgb) / 6%);
   pointer-events: none;
   font-family: var(--ll-font-sans);
+
+  /*
+   * Pin line-height so the tooltip doesn't grow when the host (Nextcloud)
+   * sets `:root { line-height: 1.5 }`. Standalone uses browser-default
+   * 1.2 — without this, the same tooltip renders visibly taller in NC.
+   */
+  line-height: 1.3;
 }
 
 /* On narrow viewports the tooltip sits *above* the chart instead of overlaying

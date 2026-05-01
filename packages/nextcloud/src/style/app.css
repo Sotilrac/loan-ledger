@@ -188,38 +188,3 @@ dialog[open] {
     box-shadow: none !important;
   }
 }
-
-/*
- * Nextcloud-only: tighten the chart tooltip across all viewport widths so
- * it doesn't dominate the constrained chart area. Standalone keeps the
- * original generous spacing.
- *
- * `!important` because @ui's scoped `.chart-tooltip[data-v-X]` has the
- * same specificity as a two-class descendant selector and bundle source
- * order isn't reliable across builds.
- */
-.ll-detail__chart .chart-tooltip {
-  padding: 0.25rem 0.5rem !important;
-  min-width: 130px !important;
-}
-
-.ll-detail__chart .chart-tooltip__date {
-  font-size: 0.8125rem !important;
-  margin: 0 0 0.125rem !important;
-}
-
-.ll-detail__chart .chart-tooltip dl {
-  gap: 0.0625rem !important;
-}
-
-.ll-detail__chart .chart-tooltip div {
-  gap: 0.625rem !important;
-}
-
-.ll-detail__chart .chart-tooltip dt {
-  font-size: 0.6875rem !important;
-}
-
-.ll-detail__chart .chart-tooltip dd {
-  font-size: 0.8125rem !important;
-}
