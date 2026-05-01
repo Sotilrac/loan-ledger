@@ -16,6 +16,10 @@ export default defineConfig({
         replacement: fileURLToPath(new URL('../ui/src/style/tokens.css', import.meta.url)),
       },
       {
+        find: '@loan-ledger/ui/style/typography.css',
+        replacement: fileURLToPath(new URL('../ui/src/style/typography.css', import.meta.url)),
+      },
+      {
         find: '@loan-ledger/ui',
         replacement: fileURLToPath(new URL('../ui/src/index.ts', import.meta.url)),
       },

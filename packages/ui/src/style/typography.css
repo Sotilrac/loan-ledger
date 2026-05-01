@@ -1,0 +1,65 @@
+/*
+ * Shared typography primitives (`.eyebrow`, `.label`, `.supporting`,
+ * `.caption`) used by both the standalone web App.vue and the Nextcloud
+ * loan detail view. Tokens come from `tokens.css` (which must be imported
+ * before this file).
+ */
+
+.eyebrow,
+.label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ll-ink-muted);
+  margin: 0 0 0.25rem;
+}
+
+.eyebrow {
+  font-size: 0.875rem;
+}
+
+.supporting {
+  font-family: var(--ll-font-sans);
+  font-size: 1.5625rem;
+  font-weight: 500;
+  margin: 0;
+  font-feature-settings:
+    'tnum' 1,
+    'lnum' 1;
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: 1.2;
+}
+
+.supporting.positive {
+  color: var(--ll-positive);
+}
+
+.supporting.negative {
+  color: var(--ll-negative);
+}
+
+.caption {
+  font-size: 0.75rem;
+  color: var(--ll-ink-muted);
+  margin: 0.125rem 0 0;
+}
+
+.property-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.property-links a {
+  color: var(--ll-accent);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ll-ink-faint);
+}
+
+.property-links a:hover {
+  color: var(--ll-accent-hover);
+  border-bottom-color: var(--ll-accent);
+}

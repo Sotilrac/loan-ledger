@@ -5,11 +5,14 @@
  * inside Nextcloud's chrome.
  */
 
+/*
+ * Plain block layout below — `#content` already provides the scroll
+ * container, so adding flex + min-height fights it and prevents the page
+ * from scrolling when the amortization table runs longer than the
+ * viewport.
+ */
 .ll-shell {
   font-family: var(--ll-font-sans, system-ui, sans-serif);
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
 }
 
 .ll-shell__bar {
@@ -44,7 +47,6 @@
 }
 
 .ll-shell__main {
-  flex: 1;
   padding: 1.5rem 1.25rem;
   max-width: 64rem;
   width: 100%;

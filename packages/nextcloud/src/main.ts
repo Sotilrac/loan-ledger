@@ -5,6 +5,7 @@ import App from './App.vue';
 import { router } from './router.js';
 import { OcsMappingsSource } from './source/ocsMappingsSource.js';
 import '@loan-ledger/ui/style/tokens.css';
+import '@loan-ledger/ui/style/typography.css';
 import './style/app.css';
 
 // Mappings travel with the loan files via `<ledgers>/.mappings.yaml` so

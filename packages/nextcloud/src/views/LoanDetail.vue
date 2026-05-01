@@ -5,6 +5,8 @@ import {
   CsvImportDialog,
   EquityGauge,
   format as fmt,
+  formatMonthFullYear,
+  formatMonthLabel,
   LoanEditForm,
   ScenariosPanel,
   useLoanStore,
@@ -24,6 +26,8 @@ const loaded = ref(false);
 
 const currency = computed(() => loan.activeLoan.property.currency);
 const fmtCents = (n: number): string => fmt.fmtCents(n, currency.value);
+const fmtCentsCompact = (n: number): string => fmt.fmtCentsCompact(n, currency.value);
+const fmtPct1 = fmt.fmtPct1;
 
 const principalRepaid = computed(
   () =>
@@ -85,9 +89,24 @@ watch(() => props.fileId, load);
 
     <template v-else-if="loaded">
       <header class="ll-detail__header">
-        <div>
-          <p class="ll-detail__eyebrow">{{ loan.fileName }}</p>
+        <div class="ll-detail__title-block">
+          <p class="eyebrow">{{ loan.fileName }}</p>
           <h2 class="ll-detail__title">{{ loan.activeLoan.property.name }}</h2>
+          <p class="caption">
+            Purchased {{ formatMonthFullYear(loan.activeLoan.property.purchase_date) }} for
+            {{ fmtCentsCompact(loan.activeLoan.property.purchase_price) }}
+          </p>
+          <p v-if="(loan.activeLoan.property.links ?? []).length" class="property-links">
+            <a
+              v-for="link in loan.activeLoan.property.links"
+              :key="link.url"
+              :href="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ link.label }}
+            </a>
+          </p>
         </div>
         <div class="ll-detail__actions">
           <button
@@ -119,50 +138,95 @@ watch(() => props.fileId, load);
       </p>
 
       <div class="ll-detail__summary">
-        <EquityGauge
-          :equity="loan.computation.summary.equity ?? 0"
-          :property-value="loan.activeLoan.valuation.current.amount"
-          :currency="currency"
-        />
-        <dl class="ll-detail__facts">
+        <div class="ll-detail__gauge">
+          <EquityGauge
+            :equity="loan.computation.summary.equity ?? 0"
+            :property-value="loan.activeLoan.valuation.current.amount"
+            :currency="currency"
+          />
+        </div>
+        <div class="ll-detail__facts">
           <div>
-            <dt>Balance</dt>
-            <dd>{{ fmtCents(loan.computation.summary.current_actual_balance) }}</dd>
+            <p class="label">Balance</p>
+            <p class="supporting">
+              {{ fmtCents(loan.computation.summary.current_actual_balance) }}
+            </p>
+            <p class="caption">
+              Scheduled {{ fmtCents(loan.computation.summary.current_scheduled_balance) }}
+            </p>
           </div>
           <div>
-            <dt>Monthly payment</dt>
-            <dd>
+            <p class="label">Monthly</p>
+            <p class="supporting">
               {{
                 fmtCents(
                   (loan.computation.ledger[0]?.scheduled.payment ?? 0) +
                     loan.activeLoan.loan.escrow_monthly,
                 )
               }}
-            </dd>
+            </p>
+            <p v-if="loan.activeLoan.loan.escrow_monthly > 0" class="caption">
+              {{ fmtCents(loan.computation.ledger[0]?.scheduled.payment ?? 0) }} P+I &nbsp;·&nbsp;
+              {{ fmtCents(loan.activeLoan.loan.escrow_monthly) }} escrow
+            </p>
+            <p v-else class="caption">
+              {{ loan.activeLoan.loan.monthly_payment ? 'Manual override' : 'Derived' }}
+            </p>
           </div>
           <div>
-            <dt>Rate</dt>
-            <dd>{{ currentRateDisplay }}</dd>
+            <p class="label">Rate</p>
+            <p class="supporting">{{ currentRateDisplay }}</p>
+            <p class="caption">
+              Payoff {{ formatMonthLabel(loan.computation.summary.projected_payoff_date) }}
+            </p>
           </div>
           <div>
-            <dt>Principal repaid</dt>
-            <dd>
-              {{ fmtCents(principalRepaid) }}
-              <small>({{ fmt.fmtPct1(principalRepaidRatio) }})</small>
-            </dd>
+            <p class="label">Interest paid</p>
+            <p class="supporting">
+              {{ fmtCents(loan.computation.summary.actual_interest_to_date) }}
+            </p>
+            <p class="caption">{{ loan.computation.summary.payments_made }} payments</p>
+          </div>
+          <div>
+            <p class="label">Principal paid</p>
+            <p class="supporting">{{ fmtCents(principalRepaid) }}</p>
+            <p class="caption">{{ fmtPct1(principalRepaidRatio) }} of original loan</p>
+          </div>
+          <div>
+            <p class="label">Current valuation</p>
+            <p class="supporting">
+              {{ fmtCents(loan.activeLoan.valuation.current.amount) }}
+            </p>
+            <p class="caption">
+              As of {{ formatMonthLabel(loan.activeLoan.valuation.current.as_of) }}
+            </p>
           </div>
           <div v-if="appreciation">
-            <dt>Appreciation</dt>
-            <dd>
-              {{ fmtCents(appreciation.abs) }}
-              <small>({{ fmt.fmtPct1(appreciation.pct) }})</small>
-            </dd>
+            <p class="label">Appreciation</p>
+            <p
+              class="supporting"
+              :class="{ positive: appreciation.abs > 0, negative: appreciation.abs < 0 }"
+            >
+              {{ fmtCentsCompact(appreciation.abs) }}
+            </p>
+            <p class="caption">{{ fmtPct1(appreciation.pct) }} since purchase</p>
           </div>
           <div>
-            <dt>Months ahead</dt>
-            <dd>{{ fmt.monthsLabel(loan.computation.summary.months_ahead_of_schedule) }}</dd>
+            <p class="label">Months ahead</p>
+            <p
+              class="supporting"
+              :class="{
+                positive: loan.computation.summary.months_ahead_of_schedule > 0,
+                negative: loan.computation.summary.months_ahead_of_schedule < 0,
+              }"
+            >
+              {{ fmt.monthsLabel(loan.computation.summary.months_ahead_of_schedule) }}
+            </p>
+            <p class="caption">
+              Payoff {{ formatMonthLabel(loan.computation.summary.projected_payoff_date) }}
+            </p>
           </div>
-        </dl>
+        </div>
         <ScenariosPanel />
       </div>
 
@@ -194,34 +258,37 @@ watch(() => props.fileId, load);
   margin-bottom: 1.5rem;
 }
 
-.ll-detail__eyebrow {
-  font-size: 0.75rem;
-  color: var(--color-text-maxcontrast, #888);
-  font-family: var(--ll-font-mono, ui-monospace, monospace);
-  margin: 0 0 0.25rem;
+.ll-detail__title-block {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .ll-detail__title {
-  margin: 0;
-  font-size: 1.5rem;
+  font-family: var(--ll-font-serif);
+  font-size: 1.5625rem;
+  font-weight: 500;
+  line-height: 1.1;
+  margin: 0.125rem 0 0;
 }
 
 .ll-detail__actions {
   display: flex;
   gap: 0.5rem;
+  flex: none;
 }
 
 .ll-btn {
   padding: 0.5rem 1rem;
-  border: 1px solid var(--color-border, #ccc);
-  background: var(--color-main-background, #fff);
+  border: 1px solid var(--ll-ink-faint);
+  background: var(--ll-paper-raised, var(--color-main-background, #fff));
+  color: inherit;
   border-radius: 4px;
   cursor: pointer;
   font: inherit;
 }
 
 .ll-btn:hover:not(:disabled) {
-  border-color: var(--color-primary-element, #0082c9);
+  border-color: var(--ll-accent);
 }
 
 .ll-btn:disabled {
@@ -230,17 +297,33 @@ watch(() => props.fileId, load);
 }
 
 .ll-btn--primary {
-  background: var(--color-primary-element, #0082c9);
+  background: var(--ll-accent);
   color: #fff;
-  border-color: var(--color-primary-element, #0082c9);
+  border-color: var(--ll-accent);
+}
+
+.ll-btn--primary:hover:not(:disabled) {
+  background: var(--ll-accent-hover);
 }
 
 .ll-detail__summary {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) 2fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 240px minmax(0, 1fr) 320px;
+  gap: 2rem;
   align-items: start;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--ll-ink-faint);
+  border-bottom: 1px solid var(--ll-ink-faint);
   margin-bottom: 1.5rem;
+}
+
+.ll-detail__gauge {
+  display: flex;
+  justify-content: center;
+}
+
+.ll-detail__gauge :deep(svg) {
+  max-width: 220px;
 }
 
 @media (width <= 64rem) {
@@ -251,16 +334,8 @@ watch(() => props.fileId, load);
 
 .ll-detail__facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.75rem 1.5rem;
-  margin: 0;
-}
-
-.ll-detail__facts dt {
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-maxcontrast, #888);
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1.5rem 2rem;
 }
 
 .ll-detail__facts dd {
