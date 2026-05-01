@@ -36,8 +36,8 @@ class PageController extends Controller {
 		$userId = $user?->getUID() ?? '';
 
 		$this->initialState->provideInitialState(
-			'folder',
-			$this->config->getLedgersFolder($userId),
+			'folders',
+			$this->config->getLedgersFolders($userId),
 		);
 
 		Util::addScript(Application::APP_ID, 'loanledger-main');
