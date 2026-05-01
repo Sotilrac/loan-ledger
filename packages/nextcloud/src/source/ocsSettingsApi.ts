@@ -1,10 +1,17 @@
 import { ocs } from '../api/ocs.js';
 
 interface Settings {
-  folder: string;
+  folders: string[];
+}
+
+interface FolderCreated {
+  path: string;
+  fileid: number;
 }
 
 export const settingsApi = {
   get: (): Promise<Settings> => ocs.get<Settings>('/settings'),
-  set: (folder: string): Promise<Settings> => ocs.put<Settings>('/settings', { folder }),
+  set: (folders: string[]): Promise<Settings> => ocs.put<Settings>('/settings', { folders }),
+  createFolder: (path: string): Promise<FolderCreated> =>
+    ocs.post<FolderCreated>('/folders', { path }),
 };
