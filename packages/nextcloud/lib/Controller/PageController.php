@@ -10,6 +10,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\IRequest;
@@ -42,6 +43,17 @@ class PageController extends Controller {
 		Util::addScript(Application::APP_ID, 'loanledger-main');
 		Util::addStyle(Application::APP_ID, 'loanledger-main');
 
-		return new TemplateResponse(Application::APP_ID, 'index');
+		$response = new TemplateResponse(Application::APP_ID, 'index');
+
+		// ajv (the JSON-schema validator in `@loan-ledger/core`) compiles
+		// validators from our static schemas at runtime via `new Function()`.
+		// Nextcloud's default CSP forbids `unsafe-eval`; we relax it here
+		// for this single page. Safe because the schemas are bundled at
+		// build time — no user input ever reaches the validator factory.
+		$csp = new ContentSecurityPolicy();
+		$csp->allowEvalScript(true);
+		$response->setContentSecurityPolicy($csp);
+
+		return $response;
 	}
 }
