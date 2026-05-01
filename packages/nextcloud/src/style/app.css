@@ -191,6 +191,24 @@ dialog[open] {
   box-sizing: border-box;
 }
 
+/*
+ * NC also hangs hover/focus/active styles off bare inputs/selects with a
+ * 2px border + 2px box-shadow halo. Neutralize those too so component-
+ * scoped focus styles (the underline accent, etc.) are what users see.
+ */
+.ll-shell input:not(:disabled):hover,
+.ll-shell input:not(:disabled):focus,
+.ll-shell input:not(:disabled):active,
+.ll-shell select:not(:disabled):hover,
+.ll-shell select:not(:disabled):focus,
+.ll-shell select:not(:disabled):active,
+.ll-shell textarea:not(:disabled):hover,
+.ll-shell textarea:not(:disabled):focus,
+.ll-shell textarea:not(:disabled):active {
+  box-shadow: none;
+  border: inherit;
+}
+
 .ll-shell button:not(.button-vue) {
   /* Restore the default button cursor (NC's reset says `cursor: default`). */
   cursor: pointer;

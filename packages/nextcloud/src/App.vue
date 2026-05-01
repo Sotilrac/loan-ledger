@@ -214,12 +214,23 @@ async function onSave(): Promise<void> {
 
 .ll-select {
   font: inherit;
-  padding: 0.375rem 0.5rem;
+  padding: 0.375rem 1.75rem 0.375rem 0.5rem;
   border: 1px solid var(--ll-ink-faint);
   border-radius: 4px;
-  background: var(--ll-paper-raised, #fff);
+  background-color: var(--ll-paper-raised, #fff);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' fill='none' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 0.75rem;
   color: inherit;
   max-width: 18rem;
+  appearance: none;
+  cursor: pointer;
+}
+
+.ll-select:hover,
+.ll-select:focus {
+  border-color: var(--ll-accent);
 }
 
 .ll-settings {
