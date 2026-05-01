@@ -206,7 +206,6 @@ dialog[open] {
 .ll-shell textarea:not(:disabled):focus,
 .ll-shell textarea:not(:disabled):active {
   box-shadow: none;
-  border: inherit;
 }
 
 .ll-shell button:not(.button-vue) {
