@@ -554,8 +554,8 @@ svg {
   top: 2rem;
   right: 1rem;
   background: var(--ll-paper-raised);
-  padding: 0.25rem 0.5rem;
-  min-width: 130px;
+  padding: 0.75rem 1rem;
+  min-width: 160px;
   box-shadow: 0 2px 8px rgb(var(--ll-shadow-rgb) / 6%);
   pointer-events: none;
   font-family: var(--ll-font-sans);
@@ -569,7 +569,7 @@ svg {
     position: static;
     min-width: 0;
     margin: 0 0 0.5rem;
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem 0.75rem;
     box-shadow: none;
     background: var(--ll-paper-sunk);
   }
@@ -592,32 +592,32 @@ svg {
 
 .chart-tooltip__date {
   font-family: var(--ll-font-serif);
-  font-size: 0.8125rem;
-  margin: 0 0 0.125rem;
+  font-size: 0.875rem;
+  margin: 0 0 0.5rem;
   color: var(--ll-ink);
 }
 
 .chart-tooltip dl {
   margin: 0;
   display: grid;
-  gap: 0.0625rem;
+  gap: 0.25rem;
 }
 
 .chart-tooltip div {
   display: flex;
   justify-content: space-between;
-  gap: 0.625rem;
+  gap: 1rem;
 }
 
 .chart-tooltip dt {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--ll-ink-muted);
   letter-spacing: 0.04em;
 }
 
 .chart-tooltip dd {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
   font-feature-settings:
     'tnum' 1,
