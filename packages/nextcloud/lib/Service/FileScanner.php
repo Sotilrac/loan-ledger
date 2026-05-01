@@ -12,8 +12,10 @@ use OCP\Files\Node;
 use OCP\Files\NotFoundException;
 
 /**
- * Walks the configured Ledgers folder for the given user and returns
- * metadata + raw content for every `*.loan.yaml` file it can find.
+ * Walks the user's configured ledgers folders and returns metadata + raw
+ * content for every `*.loan.yaml` file. Multiple folders are supported;
+ * folders that don't exist are silently skipped during listing so a
+ * partially-configured user still sees what's available.
  *
  * Recursion is intentional: a loan that lives in `/Ledgers/Shared with me/`
  * (because someone shared a single file into a sub-folder there) still
@@ -32,46 +34,93 @@ class FileScanner {
 	 * @return list<array{fileid: int, path: string, content_yaml: string, mtime: int, permissions: int}>
 	 */
 	public function listLoans(string $userId): array {
-		$folder = $this->getLedgersFolder($userId);
-		return $this->collect($folder);
+		$userFolder = $this->rootFolder->getUserFolder($userId);
+		$out = [];
+		foreach ($this->config->getLedgersFolders($userId) as $path) {
+			$folder = $this->resolveFolder($userFolder, $path);
+			if ($folder === null) {
+				continue;
+			}
+			foreach ($this->collect($folder) as $entry) {
+				$out[] = $entry;
+			}
+		}
+		usort($out, static fn (array $a, array $b): int => strcmp($a['path'], $b['path']));
+		return $out;
 	}
 
 	/**
-	 * Resolve a Nextcloud `fileid` to the matching loan file inside the
-	 * user's ledgers folder, or `null` if no such loan exists in scope.
+	 * Resolve a Nextcloud `fileid` to the matching loan file inside any
+	 * of the user's ledgers folders, or `null` if no such loan exists in
+	 * scope.
 	 */
 	public function findLoan(string $userId, int $fileId): ?File {
-		$folder = $this->getLedgersFolder($userId);
-		$matches = $folder->getById($fileId);
-		foreach ($matches as $node) {
-			if ($node instanceof File && $this->isLoanFile($node)) {
-				return $node;
+		$userFolder = $this->rootFolder->getUserFolder($userId);
+		foreach ($this->config->getLedgersFolders($userId) as $path) {
+			$folder = $this->resolveFolder($userFolder, $path);
+			if ($folder === null) {
+				continue;
+			}
+			foreach ($folder->getById($fileId) as $node) {
+				if ($node instanceof File && $this->isLoanFile($node)) {
+					return $node;
+				}
 			}
 		}
 		return null;
 	}
 
 	/**
-	 * The user's configured ledgers folder, resolved against their root.
+	 * The user's primary ledgers folder, resolved against their root.
+	 * Used by `MappingsRepository` (mappings live here) and `FileWriter`
+	 * (new loans land here when no other folder is specified).
 	 *
 	 * @throws LedgersFolderMissingException
 	 */
-	public function getLedgersFolder(string $userId): Folder {
+	public function getPrimaryFolder(string $userId): Folder {
 		$userFolder = $this->rootFolder->getUserFolder($userId);
-		$path = $this->config->getLedgersFolder($userId);
-		try {
-			$node = $userFolder->get($path);
-		} catch (NotFoundException) {
+		$path = $this->config->getPrimaryFolder($userId);
+		$folder = $this->resolveFolder($userFolder, $path);
+		if ($folder === null) {
+			throw new LedgersFolderMissingException(
+				"Primary ledgers folder {$path} does not exist for user {$userId}",
+			);
+		}
+		return $folder;
+	}
+
+	/**
+	 * Resolve a single ledgers folder by path. Used by services that need
+	 * to write to a *specific* folder (not just the primary).
+	 *
+	 * @throws LedgersFolderMissingException
+	 */
+	public function getFolder(string $userId, string $path): Folder {
+		$userFolder = $this->rootFolder->getUserFolder($userId);
+		$folder = $this->resolveFolder($userFolder, $path);
+		if ($folder === null) {
 			throw new LedgersFolderMissingException(
 				"Ledgers folder {$path} does not exist for user {$userId}",
 			);
 		}
-		if (!$node instanceof Folder) {
-			throw new LedgersFolderMissingException(
-				"Ledgers path {$path} is not a folder for user {$userId}",
-			);
+		return $folder;
+	}
+
+	/**
+	 * @deprecated Kept for compatibility with existing tests that mock
+	 * a single folder. Prefer `getPrimaryFolder()` or `getFolder()`.
+	 */
+	public function getLedgersFolder(string $userId): Folder {
+		return $this->getPrimaryFolder($userId);
+	}
+
+	private function resolveFolder(Folder $userFolder, string $path): ?Folder {
+		try {
+			$node = $userFolder->get($path);
+		} catch (NotFoundException) {
+			return null;
 		}
-		return $node;
+		return $node instanceof Folder ? $node : null;
 	}
 
 	/**
@@ -96,7 +145,6 @@ class FileScanner {
 				];
 			}
 		}
-		usort($out, static fn (array $a, array $b): int => strcmp($a['path'], $b['path']));
 		return $out;
 	}
 

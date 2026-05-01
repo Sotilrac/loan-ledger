@@ -18,36 +18,63 @@ class ConfigServiceTest extends TestCase {
 		$this->service = new ConfigService($this->userConfig);
 	}
 
-	public function testReturnsDefaultFolderWhenUserHasNoOverride(): void {
-		$this->userConfig
-			->method('getValueString')
-			->willReturnCallback(static fn (string $u, string $a, string $k, string $d): string => $d);
+	public function testReturnsDefaultFolderListWhenUserHasNeitherKey(): void {
+		$this->userConfig->method('getValueArray')->willReturn([]);
+		$this->userConfig->method('getValueString')->willReturn('');
 
-		self::assertSame(Application::DEFAULT_FOLDER, $this->service->getLedgersFolder('alice'));
+		self::assertSame([Application::DEFAULT_FOLDER], $this->service->getLedgersFolders('alice'));
 	}
 
-	public function testReturnsConfiguredFolderNormalized(): void {
-		$this->userConfig
-			->method('getValueString')
-			->willReturn('Loans/Mortgage');
+	public function testMigratesLegacySingleFolderKey(): void {
+		$this->userConfig->method('getValueArray')->willReturn([]);
+		$this->userConfig->method('getValueString')->willReturn('Loans/Mortgage');
 
-		self::assertSame('/Loans/Mortgage', $this->service->getLedgersFolder('alice'));
+		self::assertSame(['/Loans/Mortgage'], $this->service->getLedgersFolders('alice'));
 	}
 
-	public function testNormalizesEmptyOrSlashOnlyToDefault(): void {
+	public function testReturnsArrayNormalizedAndDeduped(): void {
 		$this->userConfig
-			->method('getValueString')
-			->willReturn('  /  ');
+			->method('getValueArray')
+			->willReturn(['Loans/A', '/loans/A', '/Loans/B', '  /  ']);
 
-		self::assertSame(Application::DEFAULT_FOLDER, $this->service->getLedgersFolder('alice'));
+		self::assertSame(
+			['/Loans/A', '/loans/A', '/Loans/B', Application::DEFAULT_FOLDER],
+			$this->service->getLedgersFolders('alice'),
+		);
 	}
 
-	public function testWritesNormalizedPath(): void {
+	public function testPrimaryFolderIsHeadOfList(): void {
+		$this->userConfig
+			->method('getValueArray')
+			->willReturn(['/Loans/Primary', '/Loans/Secondary']);
+
+		self::assertSame('/Loans/Primary', $this->service->getPrimaryFolder('alice'));
+	}
+
+	public function testPrimaryFolderFallsBackToDefaultWhenEmpty(): void {
+		$this->userConfig->method('getValueArray')->willReturn([]);
+		$this->userConfig->method('getValueString')->willReturn('');
+
+		self::assertSame(Application::DEFAULT_FOLDER, $this->service->getPrimaryFolder('alice'));
+	}
+
+	public function testWritesNormalizedAndDedupedArray(): void {
 		$this->userConfig
 			->expects(self::once())
-			->method('setValueString')
-			->with('alice', Application::APP_ID, 'folder', '/Books');
+			->method('setValueArray')
+			->with('alice', Application::APP_ID, 'folders', ['/Books', '/Other'])
+			->willReturn(true);
 
-		$this->service->setLedgersFolder('alice', 'Books/');
+		$this->service->setLedgersFolders('alice', ['Books/', '/Books/', 'Other']);
+	}
+
+	public function testWritingEmptyArrayFallsBackToDefault(): void {
+		$this->userConfig
+			->expects(self::once())
+			->method('setValueArray')
+			->with('alice', Application::APP_ID, 'folders', [Application::DEFAULT_FOLDER])
+			->willReturn(true);
+
+		$this->service->setLedgersFolders('alice', []);
 	}
 }

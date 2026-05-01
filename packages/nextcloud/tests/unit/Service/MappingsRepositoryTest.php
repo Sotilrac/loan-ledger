@@ -23,7 +23,7 @@ class MappingsRepositoryTest extends TestCase {
 	public function testReadReturnsEmptyStringWhenMappingsFileDoesNotExist(): void {
 		$folder = $this->createMock(Folder::class);
 		$folder->method('nodeExists')->with('.mappings.yaml')->willReturn(false);
-		$this->scanner->method('getLedgersFolder')->with('alice')->willReturn($folder);
+		$this->scanner->method('getPrimaryFolder')->with('alice')->willReturn($folder);
 
 		self::assertSame('', $this->repo->read('alice'));
 	}
@@ -34,7 +34,7 @@ class MappingsRepositoryTest extends TestCase {
 		$folder = $this->createMock(Folder::class);
 		$folder->method('nodeExists')->with('.mappings.yaml')->willReturn(true);
 		$folder->method('get')->with('.mappings.yaml')->willReturn($file);
-		$this->scanner->method('getLedgersFolder')->willReturn($folder);
+		$this->scanner->method('getPrimaryFolder')->willReturn($folder);
 
 		self::assertStringContainsString('schema_version: 1', $this->repo->read('alice'));
 	}
@@ -46,7 +46,7 @@ class MappingsRepositoryTest extends TestCase {
 		$folder->method('nodeExists')->with('.mappings.yaml')->willReturn(true);
 		$folder->method('get')->with('.mappings.yaml')->willReturn($file);
 		$folder->expects(self::never())->method('newFile');
-		$this->scanner->method('getLedgersFolder')->willReturn($folder);
+		$this->scanner->method('getPrimaryFolder')->willReturn($folder);
 
 		$this->repo->write('alice', 'new');
 	}
@@ -55,7 +55,7 @@ class MappingsRepositoryTest extends TestCase {
 		$folder = $this->createMock(Folder::class);
 		$folder->method('nodeExists')->with('.mappings.yaml')->willReturn(false);
 		$folder->expects(self::once())->method('newFile')->with('.mappings.yaml', 'new');
-		$this->scanner->method('getLedgersFolder')->willReturn($folder);
+		$this->scanner->method('getPrimaryFolder')->willReturn($folder);
 
 		$this->repo->write('alice', 'new');
 	}

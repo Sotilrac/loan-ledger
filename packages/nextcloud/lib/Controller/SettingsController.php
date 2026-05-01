@@ -29,7 +29,9 @@ class SettingsController extends OCSController {
 	#[NoCSRFRequired]
 	public function show(): DataResponse {
 		$userId = $this->getUserId();
-		return new DataResponse(['folder' => $this->config->getLedgersFolder($userId)]);
+		return new DataResponse([
+			'folders' => $this->config->getLedgersFolders($userId),
+		]);
 	}
 
 	#[ApiRoute(verb: 'PUT', url: '/api/v1/settings')]
@@ -37,15 +39,17 @@ class SettingsController extends OCSController {
 	#[NoCSRFRequired]
 	public function update(): DataResponse {
 		$userId = $this->getUserId();
-		$folder = $this->request->getParam('folder');
-		if (!is_string($folder) || trim($folder) === '') {
+		$folders = $this->request->getParam('folders');
+		if (!is_array($folders)) {
 			return new DataResponse(
-				['error' => 'invalid_body', 'message' => 'Expected non-empty string folder'],
+				['error' => 'invalid_body', 'message' => 'Expected array of folder paths'],
 				Http::STATUS_BAD_REQUEST,
 			);
 		}
-		$this->config->setLedgersFolder($userId, $folder);
-		return new DataResponse(['folder' => $this->config->getLedgersFolder($userId)]);
+		$this->config->setLedgersFolders($userId, array_values($folders));
+		return new DataResponse([
+			'folders' => $this->config->getLedgersFolders($userId),
+		]);
 	}
 
 	private function getUserId(): string {

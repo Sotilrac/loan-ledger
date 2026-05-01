@@ -8,9 +8,13 @@ use OCA\LoanLedger\AppInfo\Application;
 use OCP\Config\IUserConfig;
 
 /**
- * Per-user configuration. Today there is exactly one knob: the path to the
- * folder where the user keeps their `.loan.yaml` files. It defaults to
- * `/Ledgers/` and the user can change it from the app's settings page.
+ * Per-user configuration. The user keeps `.loan.yaml` files in one or
+ * more configured folders inside their Nextcloud. The first folder is
+ * the "primary" — it's where new loans land by default and where the
+ * shared `.mappings.yaml` lives. Defaults to `[/Ledgers]` on first use.
+ *
+ * For backwards compatibility we still read the legacy single `folder`
+ * value and migrate it to the array on first read.
  */
 class ConfigService {
 	public function __construct(
@@ -18,23 +22,72 @@ class ConfigService {
 	) {
 	}
 
-	public function getLedgersFolder(string $userId): string {
-		$path = $this->config->getValueString(
+	/**
+	 * @return list<string>
+	 */
+	public function getLedgersFolders(string $userId): array {
+		$folders = $this->config->getValueArray(
 			$userId,
 			Application::APP_ID,
-			'folder',
-			Application::DEFAULT_FOLDER,
+			'folders',
+			[],
 		);
-		return $this->normalize($path);
+		if (count($folders) === 0) {
+			$legacy = $this->config->getValueString(
+				$userId,
+				Application::APP_ID,
+				'folder',
+				'',
+			);
+			$folders = $legacy !== '' ? [$legacy] : [Application::DEFAULT_FOLDER];
+		}
+		return $this->cleanFolderList($folders);
 	}
 
-	public function setLedgersFolder(string $userId, string $path): void {
-		$this->config->setValueString(
+	/**
+	 * The "primary" folder — the head of the list. Used as the destination
+	 * for new loans and the location of the shared `.mappings.yaml`.
+	 */
+	public function getPrimaryFolder(string $userId): string {
+		$folders = $this->getLedgersFolders($userId);
+		return $folders[0] ?? Application::DEFAULT_FOLDER;
+	}
+
+	/**
+	 * @param list<string> $folders
+	 */
+	public function setLedgersFolders(string $userId, array $folders): void {
+		$normalized = $this->cleanFolderList($folders);
+		if (count($normalized) === 0) {
+			$normalized = [Application::DEFAULT_FOLDER];
+		}
+		$this->config->setValueArray(
 			$userId,
 			Application::APP_ID,
-			'folder',
-			$this->normalize($path),
+			'folders',
+			$normalized,
 		);
+	}
+
+	/**
+	 * @param list<string> $folders
+	 * @return list<string>
+	 */
+	private function cleanFolderList(array $folders): array {
+		$out = [];
+		$seen = [];
+		foreach ($folders as $folder) {
+			if (!is_string($folder)) {
+				continue;
+			}
+			$normalized = $this->normalize($folder);
+			if (isset($seen[$normalized])) {
+				continue;
+			}
+			$seen[$normalized] = true;
+			$out[] = $normalized;
+		}
+		return $out;
 	}
 
 	private function normalize(string $path): string {

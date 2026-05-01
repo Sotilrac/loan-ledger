@@ -21,7 +21,7 @@ class MappingsRepository {
 	}
 
 	public function read(string $userId): string {
-		$folder = $this->scanner->getLedgersFolder($userId);
+		$folder = $this->scanner->getPrimaryFolder($userId);
 		if (!$folder->nodeExists(Application::MAPPINGS_FILE)) {
 			return '';
 		}
@@ -30,7 +30,7 @@ class MappingsRepository {
 	}
 
 	public function write(string $userId, string $yaml): void {
-		$folder = $this->scanner->getLedgersFolder($userId);
+		$folder = $this->scanner->getPrimaryFolder($userId);
 		if ($folder->nodeExists(Application::MAPPINGS_FILE)) {
 			$node = $folder->get(Application::MAPPINGS_FILE);
 			if ($node instanceof File) {

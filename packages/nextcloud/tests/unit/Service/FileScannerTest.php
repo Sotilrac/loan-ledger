@@ -26,7 +26,11 @@ class FileScannerTest extends TestCase {
 		$this->scanner = new FileScanner($this->rootFolder, $this->config);
 
 		$this->config
-			->method('getLedgersFolder')
+			->method('getLedgersFolders')
+			->with('alice')
+			->willReturn(['/Ledgers']);
+		$this->config
+			->method('getPrimaryFolder')
 			->with('alice')
 			->willReturn('/Ledgers');
 	}
@@ -65,7 +69,18 @@ class FileScannerTest extends TestCase {
 		self::assertContains(201, $ids);
 	}
 
-	public function testListLoansThrowsWhenFolderMissing(): void {
+	public function testListLoansSkipsMissingFoldersInsteadOfThrowing(): void {
+		$userFolder = $this->createMock(Folder::class);
+		$userFolder
+			->method('get')
+			->with('/Ledgers')
+			->willThrowException(new NotFoundException());
+		$this->rootFolder->method('getUserFolder')->with('alice')->willReturn($userFolder);
+
+		self::assertSame([], $this->scanner->listLoans('alice'));
+	}
+
+	public function testGetPrimaryFolderThrowsWhenMissing(): void {
 		$userFolder = $this->createMock(Folder::class);
 		$userFolder
 			->method('get')
@@ -74,17 +89,7 @@ class FileScannerTest extends TestCase {
 		$this->rootFolder->method('getUserFolder')->with('alice')->willReturn($userFolder);
 
 		$this->expectException(LedgersFolderMissingException::class);
-		$this->scanner->listLoans('alice');
-	}
-
-	public function testListLoansThrowsWhenConfiguredPathIsAFile(): void {
-		$userFolder = $this->createMock(Folder::class);
-		$file = $this->createMock(File::class);
-		$userFolder->method('get')->with('/Ledgers')->willReturn($file);
-		$this->rootFolder->method('getUserFolder')->with('alice')->willReturn($userFolder);
-
-		$this->expectException(LedgersFolderMissingException::class);
-		$this->scanner->listLoans('alice');
+		$this->scanner->getPrimaryFolder('alice');
 	}
 
 	public function testFindLoanReturnsNodeWhenIdMatchesAndIsLoanFile(): void {

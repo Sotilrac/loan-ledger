@@ -71,7 +71,7 @@ class FileWriterTest extends TestCase {
 			->with('my-cabin.loan.yaml', 'yaml-content')
 			->willReturn($file);
 
-		$this->scanner->method('getLedgersFolder')->with('alice')->willReturn($folder);
+		$this->scanner->method('getPrimaryFolder')->with('alice')->willReturn($folder);
 
 		$result = $this->writer->createLoan('alice', 'My Cabin', 'yaml-content');
 		self::assertSame(42, $result['fileid']);
@@ -94,7 +94,7 @@ class FileWriterTest extends TestCase {
 			->method('newFile')
 			->with('cabin-3.loan.yaml', 'yaml')
 			->willReturn($file);
-		$this->scanner->method('getLedgersFolder')->willReturn($folder);
+		$this->scanner->method('getPrimaryFolder')->willReturn($folder);
 
 		$this->writer->createLoan('alice', 'Cabin', 'yaml');
 	}
@@ -111,7 +111,7 @@ class FileWriterTest extends TestCase {
 			->method('newFile')
 			->with('loan.loan.yaml', 'yaml')
 			->willReturn($file);
-		$this->scanner->method('getLedgersFolder')->willReturn($folder);
+		$this->scanner->method('getPrimaryFolder')->willReturn($folder);
 
 		$this->writer->createLoan('alice', '!!!', 'yaml');
 	}
