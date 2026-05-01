@@ -42,7 +42,22 @@ export const useLoansStore = defineStore('loans', () => {
     loading.value = true;
     error.value = null;
     try {
-      entries.value = await registry.list();
+      const { loans, missingFolders } = await registry.list();
+      entries.value = loans;
+
+      // If every configured folder is missing on disk, the user is in
+      // first-run / folder-just-deleted territory — surface that as the
+      // `folder_missing` state so the onboarding view kicks in. If only
+      // some folders are missing we let the user keep working with what
+      // resolved.
+      if (missingFolders.length > 0 && loans.length === 0) {
+        const list = missingFolders.join(', ');
+        error.value = {
+          kind: 'folder_missing',
+          message: `Folder${missingFolders.length === 1 ? '' : 's'} ${list} not found`,
+        };
+      }
+
       // If the persisted selection no longer points at a known loan, clear it.
       if (selectedFileId.value !== null && !getById(selectedFileId.value)) {
         selectedFileId.value = entries.value[0]?.fileid ?? null;
