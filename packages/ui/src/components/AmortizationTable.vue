@@ -358,9 +358,8 @@ function closeEditor() {
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  border: 1px solid var(--ll-ink-faint);
-  border-left-width: 1px;
-  border-right-width: 1px;
+  border-top: 1px solid var(--ll-ink-faint);
+  border-bottom: 1px solid var(--ll-ink-faint);
 }
 
 @media (width < 900px) {
@@ -424,6 +423,14 @@ thead {
   top: 0;
   background: var(--ll-paper);
   z-index: 2;
+
+  /*
+   * 2px borders in the same color as the header background extend the
+   * sticky thead's visual width to match the tbody when a vertical
+   * scrollbar appears.
+   */
+  border-left: 2px solid var(--ll-paper);
+  border-right: 2px solid var(--ll-paper);
 }
 
 thead th {
