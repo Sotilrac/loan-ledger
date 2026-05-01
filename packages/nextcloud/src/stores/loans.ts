@@ -93,8 +93,12 @@ export const useLoansStore = defineStore('loans', () => {
    * server slugs the name into a file path inside the configured ledgers
    * folder. On success the list is refreshed and the new loan is selected.
    */
-  async function create(name: string, contentYaml: string): Promise<number> {
-    const created = await registry.create(name, contentYaml);
+  async function create(
+    name: string,
+    contentYaml: string,
+    folder: string | null = null,
+  ): Promise<number> {
+    const created = await registry.create(name, contentYaml, folder);
     await refresh();
     selectedFileId.value = created.fileid;
     return created.fileid;
