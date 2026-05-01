@@ -1,21 +1,26 @@
 /*
- * Minimal styling for the Nextcloud shell. The richer look-and-feel from
- * the standalone web app gets folded in during M4 once the components are
- * extracted to @loan-ledger/ui; for now we just want readable baselines
- * inside Nextcloud's chrome.
+ * Fixed-viewport flex layout, matching the standalone web app:
+ *   - `#app-content` is Nextcloud's scroll container; we fill it via
+ *     `height: 100%` and own the layout below.
+ *   - `.ll-shell` is a flex column (header + main) that never overflows;
+ *     scrolling is delegated to inner panes (only the amortization
+ *     table scrolls).
+ *   - 1440px cap matches the standalone.
  */
 
-/*
- * Plain block layout below — `#content` already provides the scroll
- * container, so adding flex + min-height fights it and prevents the page
- * from scrolling when the amortization table runs longer than the
- * viewport. The 1440px cap matches the standalone web app's outer
- * wrapper; below that, fill whatever Nextcloud gives us.
- */
+#loanledger-app,
+.ll-shell {
+  height: 100%;
+}
+
 .ll-shell {
   font-family: var(--ll-font-sans, system-ui, sans-serif);
+  display: flex;
+  flex-direction: column;
   max-width: 1440px;
   margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .ll-shell__bar {
@@ -23,7 +28,8 @@
   align-items: baseline;
   gap: 1.5rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-border, #ddd);
+  border-bottom: 1px solid var(--ll-ink-faint);
+  flex: none;
 }
 
 .ll-shell__title {
@@ -38,22 +44,36 @@
 }
 
 .ll-shell__nav a {
-  color: var(--color-text-maxcontrast, #555);
+  color: var(--ll-ink-muted);
   text-decoration: none;
   padding-bottom: 2px;
   border-bottom: 2px solid transparent;
 }
 
 .ll-shell__nav a.is-active {
-  color: var(--color-main-text, #000);
-  border-bottom-color: var(--color-primary-element, #0082c9);
+  color: var(--ll-ink);
+  border-bottom-color: var(--ll-accent);
 }
 
 .ll-shell__main {
-  padding: 1.5rem 2rem;
-  width: 100%;
-  margin: 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.25rem;
   box-sizing: border-box;
+}
+
+/*
+ * Routes that don't need fixed-viewport behavior (the loan list and the
+ * settings page) just use vertical block layout inside the main pane.
+ * They flag themselves with `.ll-route--scroll` so the main pane's flex
+ * children get a scroll wrapper.
+ */
+.ll-route--scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .ll-loanlist {
@@ -67,15 +87,15 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--color-border, #eee);
+  border: 1px solid var(--ll-ink-faint);
   border-radius: 6px;
-  background: var(--color-main-background, #fff);
+  background: var(--ll-paper-raised, var(--color-main-background, #fff));
   text-decoration: none;
   color: inherit;
 }
 
 .ll-loanlist__item:hover {
-  border-color: var(--color-primary-element, #0082c9);
+  border-color: var(--ll-accent);
 }
 
 .ll-loanlist__path {
@@ -85,7 +105,7 @@
 
 .ll-loanlist__meta {
   font-size: 0.75rem;
-  color: var(--color-text-maxcontrast, #888);
+  color: var(--ll-ink-muted);
 }
 
 .ll-empty,
@@ -93,7 +113,7 @@
   padding: 1rem;
   border-radius: 6px;
   background: var(--color-background-hover, #f5f5f5);
-  color: var(--color-text-maxcontrast, #555);
+  color: var(--ll-ink-muted);
 }
 
 .ll-error {

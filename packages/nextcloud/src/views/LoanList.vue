@@ -22,7 +22,7 @@ function basename(path: string): string {
 </script>
 
 <template>
-  <section>
+  <section class="ll-route--scroll">
     <p class="ll-loanlist__caption">
       Loans found in <code>{{ folder }}</code>
     </p>

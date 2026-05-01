@@ -29,7 +29,7 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <section>
+  <section class="ll-route--scroll">
     <h2 style="margin-top: 0">Settings</h2>
 
     <form @submit.prevent="save">
