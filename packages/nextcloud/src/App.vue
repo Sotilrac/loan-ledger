@@ -16,8 +16,6 @@ const folderDrafts = ref<string[]>([...settings.folders]);
 const settingsError = ref<string>('');
 const newError = ref<string>('');
 const folderCreateError = ref<string>('');
-const onboardChangeOpen = ref(false);
-const onboardPathDraft = ref<string>(settings.folders[0] ?? '/Ledgers');
 
 const hasLoans = computed(() => loansStore.entries.length > 0);
 const folderMissing = computed(() => loansStore.error?.kind === 'folder_missing');
@@ -164,18 +162,12 @@ async function browseForFolderRow(index: number): Promise<void> {
 }
 
 async function browseForOnboardPath(): Promise<void> {
-  const picked = await pickFolder(onboardPathDraft.value || '/');
-  if (picked) onboardPathDraft.value = picked;
-}
-
-async function onOnboardChangePath(): Promise<void> {
+  const picked = await pickFolder(settings.folders[0] ?? '/');
+  if (!picked) return;
   folderCreateError.value = '';
-  const cleaned = onboardPathDraft.value.trim();
-  if (!cleaned) return;
   try {
-    await settings.setFolders([cleaned]);
+    await settings.setFolders([picked]);
     await loansStore.refresh();
-    onboardChangeOpen.value = false;
   } catch (err) {
     folderCreateError.value = err instanceof Error ? err.message : String(err);
   }
@@ -339,25 +331,8 @@ async function onOnboardChangePath(): Promise<void> {
           >
             {{ settings.creating ? 'Creating…' : `Create ${settings.folders[0]}` }}
           </button>
-          <button type="button" class="ll-btn" @click="onboardChangeOpen = !onboardChangeOpen">
-            {{ onboardChangeOpen ? 'Cancel' : 'Or change the path' }}
-          </button>
-        </div>
-        <div v-if="onboardChangeOpen" class="ll-onboard__path">
-          <input
-            v-model="onboardPathDraft"
-            type="text"
-            placeholder="/Ledgers"
-            @keyup.enter="onOnboardChangePath"
-          />
-          <button type="button" class="ll-btn" @click="browseForOnboardPath">Browse…</button>
-          <button
-            type="button"
-            class="ll-btn ll-btn--primary"
-            :disabled="settings.saving || !onboardPathDraft.trim()"
-            @click="onOnboardChangePath"
-          >
-            {{ settings.saving ? 'Saving…' : 'Save path' }}
+          <button type="button" class="ll-btn" @click="browseForOnboardPath">
+            Or pick an existing folder…
           </button>
         </div>
       </div>
