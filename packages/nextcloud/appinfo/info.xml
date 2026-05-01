@@ -20,7 +20,8 @@ the underlying files.
 	<website>https://gitlab.com/sotilrac/loan-ledger</website>
 	<bugs>https://gitlab.com/sotilrac/loan-ledger/-/issues</bugs>
 	<repository type="git">https://gitlab.com/sotilrac/loan-ledger.git</repository>
-	<screenshot>https://gitlab.com/sotilrac/loan-ledger/-/raw/main/packages/nextcloud/appinfo/screenshot.png</screenshot>
+	<screenshot>https://gitlab.com/sotilrac/loan-ledger/-/raw/main/packages/nextcloud/appinfo/loan-ledger_nextcloud_light.png</screenshot>
+	<screenshot>https://gitlab.com/sotilrac/loan-ledger/-/raw/main/packages/nextcloud/appinfo/loan-ledger_nextcloud_dark.png</screenshot>
 	<dependencies>
 		<php min-version="8.2" max-version="8.5"/>
 		<nextcloud min-version="31" max-version="33"/>
