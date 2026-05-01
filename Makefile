@@ -1,6 +1,6 @@
 .PHONY: help install dev build test lint format typecheck install-hooks clean deploy \
 	nc-install nc-build nc-test nc-lint nc-format nc-clean nc-shell nc-dev nc-dev-down \
-	nc-dev-enable nc-dev-logs
+	nc-dev-enable nc-dev-logs nc-validate nc-package
 
 NC_DIR := packages/nextcloud
 PHP_IMAGE ?= php:8.2-cli
@@ -32,6 +32,8 @@ help:
 	@echo "  make nc-dev-enable  Enable the loanledger app inside the running NC"
 	@echo "  make nc-dev-logs    Tail logs from the dev Nextcloud"
 	@echo "  make nc-dev-down    Tear down the dev Nextcloud and discard its data"
+	@echo "  make nc-validate    Validate appinfo/info.xml against the App Store schema"
+	@echo "  make nc-package     Build a signed release tarball (needs NC_KEY env)"
 
 install:
 	pnpm install
@@ -112,3 +114,32 @@ nc-dev-logs:
 
 nc-dev-down:
 	docker compose -f $(NC_DIR)/dev/docker-compose.yml down -v
+
+# Validate appinfo/info.xml against the live App Store schema. Runs in a
+# minimal debian container so the host doesn't need libxml2-utils.
+nc-validate:
+	docker run --rm -v "$(CURDIR)/$(NC_DIR)":/app -w /app debian:trixie-slim bash -lc '\
+		apt-get update -q >/dev/null && \
+		apt-get install -y -q libxml2-utils curl ca-certificates >/dev/null && \
+		curl -s https://apps.nextcloud.com/schema/apps/info.xsd -o /tmp/info.xsd && \
+		xmllint --schema /tmp/info.xsd appinfo/info.xml --noout'
+
+# Build a signed release tarball ready for the App Store. Set NC_KEY to the
+# path of the OpenPGP private key whose paired cert was issued via
+# https://github.com/nextcloud/app-certificate-requests.
+NC_VERSION ?= $(shell sed -n 's@.*<version>\(.*\)</version>.*@\1@p' $(NC_DIR)/appinfo/info.xml)
+NC_OUT := dist/loanledger-$(NC_VERSION).tar.gz
+NC_KEY ?= $(HOME)/.nextcloud/certificates/loanledger.key
+
+nc-package: nc-validate nc-install nc-build
+	rm -rf dist && mkdir -p dist/loanledger
+	rsync -a --exclude-from=$(NC_DIR)/.nextcloudignore \
+		--exclude=node_modules --exclude=tests --exclude=src \
+		$(NC_DIR)/ dist/loanledger/
+	tar -czf $(NC_OUT) -C dist loanledger
+	@if [ -f "$(NC_KEY)" ]; then \
+		openssl dgst -sha512 -sign "$(NC_KEY)" $(NC_OUT) | base64 -w0 > $(NC_OUT).sig; \
+		echo "Signed → $(NC_OUT).sig"; \
+	else \
+		echo "NC_KEY not set or missing — tarball built unsigned at $(NC_OUT)"; \
+	fi

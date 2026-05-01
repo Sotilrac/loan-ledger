@@ -13,12 +13,14 @@ All loan math runs entirely in your browser; the server only reads and writes
 the underlying files.
 	]]></description>
 	<version>0.1.0</version>
-	<licence>mpl-2.0</licence>
+	<licence>MPL-2.0</licence>
 	<author homepage="https://asmat.ca">Carlos Asmat</author>
 	<namespace>LoanLedger</namespace>
 	<category>office</category>
+	<website>https://gitlab.com/sotilrac/loan-ledger</website>
 	<bugs>https://gitlab.com/sotilrac/loan-ledger/-/issues</bugs>
 	<repository type="git">https://gitlab.com/sotilrac/loan-ledger.git</repository>
+	<screenshot>https://gitlab.com/sotilrac/loan-ledger/-/raw/main/packages/nextcloud/appinfo/screenshot.png</screenshot>
 	<dependencies>
 		<php min-version="8.2" max-version="8.5"/>
 		<nextcloud min-version="31" max-version="33"/>

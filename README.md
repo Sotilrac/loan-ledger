@@ -151,6 +151,56 @@ If you'd rather run against an existing Nextcloud install:
 
 PHP unit tests work the same way — `make nc-test` runs against `nextcloud/ocp` interface stubs without booting a real Nextcloud.
 
+## Publishing to the Nextcloud App Store
+
+The App Store uses an internal CA: you generate a signing key, submit a CSR for the app id, and Nextcloud's security team issues you a certificate that the store uses to verify your release tarballs. The key never leaves your machine, the cert is public.
+
+### One-time: get a signed certificate
+
+**Step 1.** Generate the key and CSR (the `CN` must match the `<id>` in `appinfo/info.xml`):
+
+```bash
+mkdir -p ~/.nextcloud/certificates
+openssl genrsa -out ~/.nextcloud/certificates/loanledger.key 4096
+openssl req -new -key ~/.nextcloud/certificates/loanledger.key \
+  -out ~/.nextcloud/certificates/loanledger.csr -subj "/CN=loanledger"
+```
+
+**Step 2.** Submit the CSR by opening a PR against [`nextcloud/app-certificate-requests`](https://github.com/nextcloud/app-certificate-requests) (preferred, leaves an audit trail), or by emailing the CSR to [security@nextcloud.com](mailto:security@nextcloud.com).
+
+**Step 3.** They merge / reply with `loanledger.crt`. Save it next to the key.
+
+### Per release: build, validate, sign, submit
+
+```bash
+make nc-validate       # runs xmllint against the live App Store schema
+NC_KEY=~/.nextcloud/certificates/loanledger.key make nc-package
+```
+
+`nc-package` runs `nc-install` and `nc-build`, copies the runtime files into `dist/loanledger/` (honoring `.nextcloudignore`), packs `dist/loanledger-<version>.tar.gz`, and writes a base64 signature to `dist/loanledger-<version>.tar.gz.sig`.
+
+Push the tarball to a public HTTPS URL (a GitLab/GitHub release asset is canonical) and POST it to the App Store API:
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -u "<your-account>:<your-app-store-token>" \
+  https://apps.nextcloud.com/api/v1/apps/releases \
+  -d "$(jq -n \
+    --arg url 'https://gitlab.com/sotilrac/loan-ledger/-/releases/nc-v0.1.0/downloads/loanledger-0.1.0.tar.gz' \
+    --arg sig "$(cat dist/loanledger-0.1.0.tar.gz.sig)" \
+    '{download: $url, signature: $sig, nightly: false}')"
+```
+
+The store fetches the URL, verifies the signature against your registered cert, and validates `info.xml`. First-time submissions go to a manual review queue; subsequent releases on the same `<id>` auto-publish.
+
+### `info.xml` checklist
+
+Anything user-visible in the App Store listing comes from `appinfo/info.xml`. The validator (`make nc-validate`) catches structural issues, but a few content gates are worth eyeballing:
+
+- `<licence>` must match an enum value (`MPL-2.0`, `AGPL-3.0-or-later`, `Apache-2.0`, `MIT`, ...). Lowercase variants are rejected.
+- `<screenshot>` URLs must be publicly reachable HTTPS PNGs. The placeholder URL in this repo points at `packages/nextcloud/appinfo/screenshot.png`; drop a real screenshot there before the first publish.
+- `<dependencies><nextcloud min-version=".." max-version=".."/></dependencies>` is what makes the app appear (or not) in each user's update list. Bump `max-version` when you've tested against a new NC release.
+
 ## CI and releases
 
 GitLab CI (`.gitlab-ci.yml`) runs install → lint/typecheck/test → build → deploy on every push. The JS pipeline is always-on; the `ci-nextcloud-php-test` and `ci-nextcloud-php-lint` jobs run on a `php:8.2-cli` image and are gated by `changes: packages/nextcloud/**/*`, so JS-only commits don't pay the PHP install cost. The `deploy:cloudflare` job pushes the standalone web bundle to Cloudflare Pages on every push to `main` (needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as masked variables).
