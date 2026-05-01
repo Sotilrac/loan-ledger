@@ -140,10 +140,20 @@ function pickFolder(initial: string, title = 'Choose a folder'): Promise<string 
       };
     };
   };
-  const filepicker = w.OC?.dialogs?.filepicker;
-  if (!filepicker) return Promise.resolve(null);
+  const dialogs = w.OC?.dialogs;
+  if (!dialogs?.filepicker) return Promise.resolve(null);
+  // Call as a method so `this` binds to `OC.dialogs` — the filepicker
+  // implementation reads `this.FILEPICKER_TYPE_CUSTOM` internally.
   return new Promise((resolve) => {
-    filepicker(title, (path) => resolve(path), false, 'httpd/unix-directory', true, 1, initial);
+    dialogs.filepicker!(
+      title,
+      (path) => resolve(path),
+      false,
+      'httpd/unix-directory',
+      true,
+      1,
+      initial,
+    );
   });
 }
 
