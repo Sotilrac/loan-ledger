@@ -118,6 +118,46 @@ async function onCreateFolder(path: string): Promise<void> {
   }
 }
 
+/**
+ * Open Nextcloud's built-in file picker in folder-only mode and resolve to
+ * the absolute path the user picks (or `null` if they cancel). Uses the
+ * legacy `OC.dialogs.filepicker` global because it's the only one that's
+ * always available without bundling `@nextcloud/dialogs`.
+ */
+function pickFolder(initial: string, title = 'Choose a folder'): Promise<string | null> {
+  const w = window as unknown as {
+    OC?: {
+      dialogs?: {
+        filepicker?: (
+          title: string,
+          callback: (path: string | null) => void,
+          multiselect: boolean,
+          mimetypeFilter: string | string[],
+          modal: boolean,
+          type?: number,
+          startAt?: string,
+        ) => void;
+      };
+    };
+  };
+  const filepicker = w.OC?.dialogs?.filepicker;
+  if (!filepicker) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    filepicker(title, (path) => resolve(path), false, 'httpd/unix-directory', true, 1, initial);
+  });
+}
+
+async function browseForFolderRow(index: number): Promise<void> {
+  const current = folderDrafts.value[index] ?? '/';
+  const picked = await pickFolder(current);
+  if (picked) updateFolderRow(index, picked);
+}
+
+async function browseForOnboardPath(): Promise<void> {
+  const picked = await pickFolder(onboardPathDraft.value || '/');
+  if (picked) onboardPathDraft.value = picked;
+}
+
 async function onOnboardChangePath(): Promise<void> {
   folderCreateError.value = '';
   const cleaned = onboardPathDraft.value.trim();
@@ -218,6 +258,15 @@ async function onOnboardChangePath(): Promise<void> {
               <button
                 type="button"
                 class="ll-btn ll-btn--ghost"
+                aria-label="Browse"
+                data-tooltip="Browse Nextcloud for a folder"
+                @click="browseForFolderRow(i)"
+              >
+                Browse…
+              </button>
+              <button
+                type="button"
+                class="ll-btn ll-btn--ghost"
                 aria-label="Remove folder"
                 :disabled="folderDrafts.length === 1 && !draft.trim()"
                 @click="removeFolderRow(i)"
@@ -291,6 +340,7 @@ async function onOnboardChangePath(): Promise<void> {
             placeholder="/Ledgers"
             @keyup.enter="onOnboardChangePath"
           />
+          <button type="button" class="ll-btn" @click="browseForOnboardPath">Browse…</button>
           <button
             type="button"
             class="ll-btn ll-btn--primary"
