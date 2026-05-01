@@ -214,6 +214,14 @@ dialog[open] {
 }
 
 /*
+ * Author byline is meaningful on the public standalone but redundant
+ * inside Nextcloud's chrome — hide it.
+ */
+.ll-shell .eyebrow .by {
+  display: none;
+}
+
+/*
  * Below the layout collapse breakpoint (mid stacks chart + scenarios), let
  * the page scroll as a whole instead of the amortization table being a
  * fixed-height pane with internal scroll. This matches the standalone web
