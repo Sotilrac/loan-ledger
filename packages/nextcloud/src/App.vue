@@ -16,6 +16,8 @@ const folderDrafts = ref<string[]>([...settings.folders]);
 const settingsError = ref<string>('');
 const newError = ref<string>('');
 const folderCreateError = ref<string>('');
+const onboardChangeOpen = ref(false);
+const onboardPathDraft = ref<string>(settings.folders[0] ?? '/Ledgers');
 
 const hasLoans = computed(() => loansStore.entries.length > 0);
 const folderMissing = computed(() => loansStore.error?.kind === 'folder_missing');
@@ -115,6 +117,19 @@ async function onCreateFolder(path: string): Promise<void> {
     folderCreateError.value = err instanceof Error ? err.message : String(err);
   }
 }
+
+async function onOnboardChangePath(): Promise<void> {
+  folderCreateError.value = '';
+  const cleaned = onboardPathDraft.value.trim();
+  if (!cleaned) return;
+  try {
+    await settings.setFolders([cleaned]);
+    await loansStore.refresh();
+    onboardChangeOpen.value = false;
+  } catch (err) {
+    folderCreateError.value = err instanceof Error ? err.message : String(err);
+  }
+}
 </script>
 
 <template>
@@ -128,7 +143,7 @@ async function onCreateFolder(path: string): Promise<void> {
         </span>
       </p>
 
-      <div class="ll-header__controls">
+      <div v-if="!folderMissing" class="ll-header__controls">
         <template v-if="!loan.isEditing">
           <select
             class="ll-select"
@@ -241,8 +256,17 @@ async function onCreateFolder(path: string): Promise<void> {
       <div v-if="loansStore.loading" class="ll-empty">Loading loans…</div>
 
       <div v-else-if="folderMissing" class="ll-empty ll-empty--centered">
-        <p>
-          The folder <code>{{ settings.folders[0] }}</code> doesn't exist yet.
+        <h2 class="ll-onboard__title">Welcome to Loan Ledger</h2>
+        <p class="ll-onboard__lede">
+          Loan Ledger is a local-first mortgage and loan dashboard. Each loan lives in your
+          Nextcloud as a plain-text <code>.loan.yaml</code> file you can hand-edit, version, and
+          <strong>share with anyone the folder is shared with</strong> — your partner sees the same
+          balance, scenarios, and amortization without needing a separate account.
+        </p>
+        <p class="ll-onboard__lede">
+          To get started, the app needs a folder inside your Nextcloud where these files will live.
+          The folder <code>{{ settings.folders[0] }}</code> doesn't exist yet — create it now (you
+          can rename, move, or share it from the Files app whenever you want).
         </p>
         <p v-if="folderCreateError" class="ll-error" style="margin: 0.5rem 0 0">
           {{ folderCreateError }}
@@ -256,8 +280,24 @@ async function onCreateFolder(path: string): Promise<void> {
           >
             {{ settings.creating ? 'Creating…' : `Create ${settings.folders[0]}` }}
           </button>
-          <button type="button" class="ll-btn" @click="settingsOpen = true">
-            Or change folder
+          <button type="button" class="ll-btn" @click="onboardChangeOpen = !onboardChangeOpen">
+            {{ onboardChangeOpen ? 'Cancel' : 'Or change the path' }}
+          </button>
+        </div>
+        <div v-if="onboardChangeOpen" class="ll-onboard__path">
+          <input
+            v-model="onboardPathDraft"
+            type="text"
+            placeholder="/Ledgers"
+            @keyup.enter="onOnboardChangePath"
+          />
+          <button
+            type="button"
+            class="ll-btn ll-btn--primary"
+            :disabled="settings.saving || !onboardPathDraft.trim()"
+            @click="onOnboardChangePath"
+          >
+            {{ settings.saving ? 'Saving…' : 'Save path' }}
           </button>
         </div>
       </div>
@@ -420,6 +460,28 @@ async function onCreateFolder(path: string): Promise<void> {
   max-width: 36rem;
   color: var(--ll-ink-soft);
   margin: 0;
+}
+
+.ll-onboard__path {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.ll-onboard__path input {
+  font: inherit;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--ll-ink-faint);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  min-width: 14rem;
+}
+
+.ll-onboard__path input:focus {
+  outline: none;
+  border-color: var(--ll-accent);
 }
 
 .ll-empty__actions {
