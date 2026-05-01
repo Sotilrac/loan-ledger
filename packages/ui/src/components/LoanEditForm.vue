@@ -688,6 +688,21 @@ select {
     'lnum' 1;
   font-variant-numeric: tabular-nums lining-nums;
   transition: border-color 120ms;
+
+  /*
+   * Nextcloud's `core/css/server.css` blanket-styles every input/select
+   * with `width: 130px; min-height: var(--default-clickable-area)`. Force
+   * the intended width and remove the min-height so our underline-style
+   * fields render the same in both targets. Standalone has no such rule
+   * so this is a no-op there.
+   */
+  width: 100%;
+  min-height: 0;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: auto;
 }
 
 input:focus,
