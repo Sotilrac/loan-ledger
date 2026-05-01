@@ -3,7 +3,7 @@ import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { LocalStorageMappingsSource } from './source/localStorageMappingsSource.js';
-import './style/tokens.css';
+import '@loan-ledger/ui/style/tokens.css';
 
 setMappingsSource(new LocalStorageMappingsSource());
 
