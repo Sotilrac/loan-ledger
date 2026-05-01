@@ -9,10 +9,13 @@
  * Plain block layout below — `#content` already provides the scroll
  * container, so adding flex + min-height fights it and prevents the page
  * from scrolling when the amortization table runs longer than the
- * viewport.
+ * viewport. The 95rem cap keeps the layout readable on ultra-wide
+ * displays; below that, fill whatever Nextcloud gives us.
  */
 .ll-shell {
   font-family: var(--ll-font-sans, system-ui, sans-serif);
+  max-width: 95rem;
+  margin: 0 auto;
 }
 
 .ll-shell__bar {

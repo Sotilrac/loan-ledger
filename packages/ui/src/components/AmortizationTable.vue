@@ -354,7 +354,7 @@ function closeEditor() {
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: auto;
   border-top: 1px solid var(--ll-ink-faint);
   border-bottom: 1px solid var(--ll-ink-faint);
 }
