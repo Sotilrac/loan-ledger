@@ -2,7 +2,13 @@
 
 A local-first mortgage and loan dashboard. Open a human-readable `.loan.yaml` file in your browser and see equity, payment splits, projected payoff, and scenario comparisons. Nothing is uploaded. Parsing and math run entirely in your browser.
 
-Two ways to run it:
+## Why
+
+Most people interact with their mortgage through a bank statement that hides the things that actually matter: where each payment really splits between principal and interest, how the balance moves over the life of the loan, what an ARM rate-reset will do to next year's bill. Loan Ledger turns those numbers into something you can see at a glance, so you can build an intuition for your loan instead of taking the lender's word for it.
+
+The bigger payoff is the scenarios panel. Want to know whether rounding up your payment by a hundred dollars saves more than dropping a windfall on the principal once a year, or whether a refinance at a lower rate beats accelerating the existing one? Drop in a few what-ifs side by side, watch the balance curves diverge, and read off the interest-saved and months-sooner deltas. The choices that look identical on a bank's calculator usually aren't, and you can find the cheaper move in your specific situation before you commit.
+
+Because each loan is a plain YAML file, you can hand-edit it, version it in git, and (in the Nextcloud app) share the folder with a partner so you're both looking at the same numbers without anyone needing a separate account.
 
 - **Standalone web app** at [loanledger.asmat.ca](https://loanledger.asmat.ca/), or self-hosted from `packages/web/dist`. Uses your browser's File System Access API to edit a local `.loan.yaml`.
 - **Nextcloud app** (`@loan-ledger/nextcloud`) that reads `.loan.yaml` files from a configurable folder (default `/Ledgers/`) so a household can share loans across accounts using normal Nextcloud sharing. See [Testing with Nextcloud](#testing-with-nextcloud) below.
