@@ -94,6 +94,16 @@ nc-dev: nc-build
 	@echo "First boot takes ~30s. Then run: make nc-dev-enable"
 
 nc-dev-enable:
+	@echo "Waiting for Nextcloud to finish installing (up to 3 minutes)..."
+	@for i in $$(seq 1 36); do \
+		if docker compose -f $(NC_DIR)/dev/docker-compose.yml exec --user www-data -T nextcloud \
+			php occ status 2>/dev/null | grep -q "installed: true"; then \
+			echo "✓ Nextcloud is up."; \
+			break; \
+		fi; \
+		printf "."; \
+		sleep 5; \
+	done; echo
 	docker compose -f $(NC_DIR)/dev/docker-compose.yml exec --user www-data nextcloud \
 		php occ app:enable loanledger
 

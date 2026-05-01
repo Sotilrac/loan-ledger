@@ -27,6 +27,7 @@ the underlying files.
 		<navigation>
 			<name>Loan Ledger</name>
 			<route>loanledger.page.index</route>
+			<icon>app.svg</icon>
 		</navigation>
 	</navigations>
 </info>

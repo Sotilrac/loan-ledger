@@ -16,7 +16,10 @@ services:
       NEXTCLOUD_ADMIN_USER: admin
       NEXTCLOUD_ADMIN_PASSWORD: admin
       NEXTCLOUD_TRUSTED_DOMAINS: localhost
-      # SQLite is the default when no SQL env vars are set; perfect for dev.
+      # SQLite for dev. Both NEXTCLOUD_ADMIN_* and SQLITE_DATABASE must be
+      # set on first launch or the entrypoint skips the unattended install
+      # and waits for the web-installer wizard.
+      SQLITE_DATABASE: nextcloud
     restart: unless-stopped
 
 volumes:
