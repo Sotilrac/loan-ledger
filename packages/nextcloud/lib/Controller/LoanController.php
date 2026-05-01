@@ -73,13 +73,14 @@ class LoanController extends OCSController {
 		$userId = $this->getUserId();
 		try {
 			$loans = $this->scanner->listLoans($userId);
+			$missing = $this->scanner->getMissingFolders($userId);
 		} catch (LedgersFolderMissingException $e) {
 			return new DataResponse(
 				['error' => 'folder_missing', 'message' => $e->getMessage()],
 				Http::STATUS_NOT_FOUND,
 			);
 		}
-		return new DataResponse(['loans' => $loans]);
+		return new DataResponse(['loans' => $loans, 'missing_folders' => $missing]);
 	}
 
 	#[ApiRoute(verb: 'GET', url: '/api/v1/loans/{fileId}/raw', requirements: ['fileId' => '\d+'])]

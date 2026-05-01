@@ -15,6 +15,7 @@ export interface OcsLoanListEntry {
 
 interface ListResponse {
   loans: OcsLoanListEntry[];
+  missing_folders: string[];
 }
 
 interface CreateResponse {
@@ -30,9 +31,9 @@ interface CreateResponse {
  * render summary cards without an N+1 round trip.
  */
 export class OcsLoanRegistry {
-  async list(): Promise<OcsLoanListEntry[]> {
+  async list(): Promise<{ loans: OcsLoanListEntry[]; missingFolders: string[] }> {
     const data = await ocs.get<ListResponse>('/loans');
-    return data.loans;
+    return { loans: data.loans, missingFolders: data.missing_folders ?? [] };
   }
 
   async create(name: string, contentYaml: string): Promise<CreateResponse> {
