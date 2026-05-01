@@ -51,7 +51,9 @@ export default defineConfig({
       input: fileURLToPath(new URL('./src/main.ts', import.meta.url)),
       output: {
         inlineDynamicImports: true,
-        entryFileNames: 'loanledger-main.js',
+        // .mjs (not .js) so Nextcloud's JSResourceLocator emits the
+        // `<script type="module">` tag that lets `import.meta` parse.
+        entryFileNames: 'loanledger-main.mjs',
         assetFileNames: (info) => {
           const cssName = info.names?.find((n) => n.endsWith('.css'));
           if (cssName) return 'loanledger-main[extname]';
