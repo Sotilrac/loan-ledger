@@ -49,8 +49,15 @@ class FileWriter {
 	 *
 	 * @return array{fileid: int, path: string, mtime: int, permissions: int}
 	 */
-	public function createLoan(string $userId, string $name, string $yaml): array {
-		$folder = $this->scanner->getPrimaryFolder($userId);
+	public function createLoan(
+		string $userId,
+		string $name,
+		string $yaml,
+		?string $folderPath = null,
+	): array {
+		$folder = $folderPath !== null
+			? $this->scanner->getFolder($userId, $folderPath)
+			: $this->scanner->getPrimaryFolder($userId);
 		$baseSlug = $this->slug($name);
 		if ($baseSlug === '') {
 			$baseSlug = 'loan';

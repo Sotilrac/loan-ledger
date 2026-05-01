@@ -64,13 +64,59 @@ async function onSelect(event: Event): Promise<void> {
   loansStore.select(value ? Number(value) : null);
 }
 
+/**
+ * NC's prompt dialog. Falls back to `window.prompt` if NC's chrome isn't
+ * loaded (e.g. running outside Nextcloud during tests).
+ */
+function ncPrompt(text: string, title: string, defaultValue = ''): Promise<string | null> {
+  const w = window as unknown as {
+    OC?: {
+      dialogs?: {
+        prompt?: (
+          text: string,
+          title: string,
+          callback: (ok: boolean, value: string) => void,
+          modal: boolean,
+          name: string,
+          password: boolean,
+        ) => void;
+      };
+    };
+  };
+  const dialogs = w.OC?.dialogs;
+  if (!dialogs?.prompt) {
+    const fallback = window.prompt(text, defaultValue);
+    return Promise.resolve(fallback);
+  }
+  return new Promise((resolve) => {
+    dialogs.prompt!(
+      text,
+      title,
+      (ok, value) => resolve(ok ? value : null),
+      true,
+      defaultValue,
+      false,
+    );
+  });
+}
+
 async function onNew(): Promise<void> {
   newError.value = '';
-  const name = window.prompt('Name for the new loan?', 'New loan');
+
+  // When multiple folders are configured, let the user pick which one the
+  // new loan lands in. Single-folder users skip this step.
+  let folder: string | null = null;
+  if (settings.folders.length > 1) {
+    folder = await pickFolder(settings.folders[0] ?? '/', 'Choose where to put the new loan');
+    if (!folder) return;
+  }
+
+  const name = await ncPrompt('Name for the new loan?', 'New loan', 'New loan');
   if (!name || !name.trim()) return;
+
   const yaml = serializeLoanYaml(buildDemoLoan());
   try {
-    await loansStore.create(name.trim(), yaml);
+    await loansStore.create(name.trim(), yaml, folder);
   } catch (err) {
     newError.value = err instanceof Error ? err.message : String(err);
   }

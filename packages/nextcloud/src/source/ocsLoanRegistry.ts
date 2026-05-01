@@ -36,8 +36,14 @@ export class OcsLoanRegistry {
     return { loans: data.loans, missingFolders: data.missing_folders ?? [] };
   }
 
-  async create(name: string, contentYaml: string): Promise<CreateResponse> {
-    return ocs.post<CreateResponse>('/loans', { name, content_yaml: contentYaml });
+  async create(
+    name: string,
+    contentYaml: string,
+    folder: string | null = null,
+  ): Promise<CreateResponse> {
+    const body: Record<string, string> = { name, content_yaml: contentYaml };
+    if (folder) body.folder = folder;
+    return ocs.post<CreateResponse>('/loans', body);
   }
 }
 

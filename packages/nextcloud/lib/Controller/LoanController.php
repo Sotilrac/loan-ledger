@@ -37,6 +37,7 @@ class LoanController extends OCSController {
 		$userId = $this->getUserId();
 		$name = $this->request->getParam('name');
 		$body = $this->request->getParam('content_yaml');
+		$folder = $this->request->getParam('folder');
 		if (!is_string($name) || trim($name) === '') {
 			return new DataResponse(
 				['error' => 'invalid_body', 'message' => 'Expected non-empty string name'],
@@ -49,9 +50,10 @@ class LoanController extends OCSController {
 				Http::STATUS_BAD_REQUEST,
 			);
 		}
+		$folderPath = is_string($folder) && trim($folder) !== '' ? trim($folder) : null;
 
 		try {
-			$created = $this->writer->createLoan($userId, $name, $body);
+			$created = $this->writer->createLoan($userId, $name, $body, $folderPath);
 		} catch (LedgersFolderMissingException $e) {
 			return new DataResponse(
 				['error' => 'folder_missing', 'message' => $e->getMessage()],
