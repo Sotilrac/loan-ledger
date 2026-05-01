@@ -15,12 +15,12 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { OcsLoanSource } from '../source/ocsLoanSource.js';
 import { useLoansStore } from '../stores/loans.js';
 
-const props = defineProps<{ fileId: number }>();
+const props = defineProps<{ fileId: number; importOpen: boolean }>();
+const emit = defineEmits<{ (e: 'close-import'): void }>();
 
 const loansStore = useLoansStore();
 const loan = useLoanStore();
 
-const importOpen = ref(false);
 const loadError = ref<string | null>(null);
 const loaded = ref(false);
 
@@ -71,10 +71,6 @@ async function load(): Promise<void> {
   loaded.value = true;
 }
 
-async function onSave(): Promise<void> {
-  await loan.save();
-}
-
 onMounted(load);
 watch(() => props.fileId, load);
 </script>
@@ -86,11 +82,7 @@ watch(() => props.fileId, load);
     <template v-else-if="loaded">
       <header class="ll-detail__header">
         <div class="ll-detail__title-block">
-          <p class="eyebrow">
-            <RouterLink :to="{ name: 'list' }">← Loans</RouterLink>
-            &nbsp;·&nbsp;
-            {{ loan.fileName }}
-          </p>
+          <p class="eyebrow">{{ loan.fileName }}</p>
           <h2 class="ll-detail__title">{{ loan.activeLoan.property.name }}</h2>
           <p class="caption">
             Purchased {{ formatMonthFullYear(loan.activeLoan.property.purchase_date) }} for
@@ -107,23 +99,6 @@ watch(() => props.fileId, load);
               {{ link.label }}
             </a>
           </p>
-        </div>
-        <div class="ll-detail__actions">
-          <template v-if="!loan.isEditing">
-            <button type="button" class="ll-btn" @click="loan.startEditing()">Edit</button>
-            <button type="button" class="ll-btn" @click="importOpen = true">Import payments</button>
-          </template>
-          <template v-else>
-            <button
-              type="button"
-              class="ll-btn ll-btn--primary"
-              :disabled="loan.saveState === 'saving'"
-              @click="onSave"
-            >
-              {{ loan.saveState === 'saving' ? 'Saving…' : 'Save' }}
-            </button>
-            <button type="button" class="ll-btn" @click="loan.cancelEditing()">Cancel</button>
-          </template>
         </div>
       </header>
 
@@ -246,7 +221,7 @@ watch(() => props.fileId, load);
         </section>
       </template>
 
-      <CsvImportDialog :open="importOpen" @close="importOpen = false" />
+      <CsvImportDialog :open="props.importOpen" @close="emit('close-import')" />
     </template>
 
     <div v-else class="ll-empty">Loading…</div>
