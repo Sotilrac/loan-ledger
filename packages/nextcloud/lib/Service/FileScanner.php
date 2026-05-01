@@ -50,6 +50,24 @@ class FileScanner {
 	}
 
 	/**
+	 * Configured folders that don't currently resolve to a folder under the
+	 * user's root. Used by the listing endpoint so the frontend can show an
+	 * onboarding/recreate state when every configured path is gone.
+	 *
+	 * @return list<string>
+	 */
+	public function getMissingFolders(string $userId): array {
+		$userFolder = $this->rootFolder->getUserFolder($userId);
+		$missing = [];
+		foreach ($this->config->getLedgersFolders($userId) as $path) {
+			if ($this->resolveFolder($userFolder, $path) === null) {
+				$missing[] = $path;
+			}
+		}
+		return $missing;
+	}
+
+	/**
 	 * Resolve a Nextcloud `fileid` to the matching loan file inside any
 	 * of the user's ledgers folders, or `null` if no such loan exists in
 	 * scope.
