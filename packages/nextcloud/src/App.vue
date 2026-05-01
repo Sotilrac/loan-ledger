@@ -200,7 +200,7 @@ async function onSave(): Promise<void> {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 1.25rem 0;
   flex: none;
   flex-wrap: wrap;
 }
@@ -268,7 +268,7 @@ async function onSave(): Promise<void> {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 1rem 1.25rem;
+  padding: 0 1.25rem 1rem;
   box-sizing: border-box;
 }
 
