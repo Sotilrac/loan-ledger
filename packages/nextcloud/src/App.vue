@@ -204,8 +204,8 @@ async function onOnboardChangePath(): Promise<void> {
               where new loans land and where the shared <code>.mappings.yaml</code> lives.
             </p>
             <p class="caption">
-              Files in these folders are regular Nextcloud files — rename, move, copy, or share them
-              from the Files app and the changes show up here on the next refresh.
+              Files in these folders are regular Nextcloud files. Rename, move, copy, or share them
+              from the Files app, and the changes show up here on the next refresh.
             </p>
 
             <div v-for="(draft, i) in folderDrafts" :key="i" class="ll-settings__row">
@@ -260,12 +260,12 @@ async function onOnboardChangePath(): Promise<void> {
         <p class="ll-onboard__lede">
           Loan Ledger is a local-first mortgage and loan dashboard. Each loan lives in your
           Nextcloud as a plain-text <code>.loan.yaml</code> file you can hand-edit, version, and
-          <strong>share with anyone the folder is shared with</strong> — your partner sees the same
-          balance, scenarios, and amortization without needing a separate account.
+          <strong>share with anyone the folder is shared with</strong>, so your partner sees the
+          same balance, scenarios, and amortization without needing a separate account.
         </p>
         <p class="ll-onboard__lede">
           To get started, the app needs a folder inside your Nextcloud where these files will live.
-          The folder <code>{{ settings.folders[0] }}</code> doesn't exist yet — create it now (you
+          The folder <code>{{ settings.folders[0] }}</code> doesn't exist yet, so create it now (you
           can rename, move, or share it from the Files app whenever you want).
         </p>
         <p v-if="folderCreateError" class="ll-error" style="margin: 0.5rem 0 0">
