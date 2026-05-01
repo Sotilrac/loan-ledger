@@ -9,6 +9,7 @@ use OCA\LoanLedger\Exception\LoanNotFoundException;
 use OCA\LoanLedger\Service\FileScanner;
 use OCA\LoanLedger\Service\FileWriter;
 use OCP\Files\File;
+use OCP\Files\Folder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -55,5 +56,63 @@ class FileWriterTest extends TestCase {
 
 		$this->expectException(LoanConflictException::class);
 		$this->writer->writeLoan('alice', 101, 'yaml', 1499);
+	}
+
+	public function testCreateLoanSlugifiesNameAndAppendsExtension(): void {
+		$folder = $this->createMock(Folder::class);
+		$folder->method('nodeExists')->willReturn(false);
+		$file = $this->createMock(File::class);
+		$file->method('getId')->willReturn(42);
+		$file->method('getPath')->willReturn('/alice/files/Ledgers/my-cabin.loan.yaml');
+		$file->method('getMTime')->willReturn(2000);
+		$file->method('getPermissions')->willReturn(31);
+		$folder->expects(self::once())
+			->method('newFile')
+			->with('my-cabin.loan.yaml', 'yaml-content')
+			->willReturn($file);
+
+		$this->scanner->method('getLedgersFolder')->with('alice')->willReturn($folder);
+
+		$result = $this->writer->createLoan('alice', 'My Cabin', 'yaml-content');
+		self::assertSame(42, $result['fileid']);
+		self::assertSame('/alice/files/Ledgers/my-cabin.loan.yaml', $result['path']);
+	}
+
+	public function testCreateLoanAppendsCounterWhenSlugCollides(): void {
+		$folder = $this->createMock(Folder::class);
+		$folder->method('nodeExists')->willReturnMap([
+			['cabin.loan.yaml', true],
+			['cabin-2.loan.yaml', true],
+			['cabin-3.loan.yaml', false],
+		]);
+		$file = $this->createMock(File::class);
+		$file->method('getId')->willReturn(99);
+		$file->method('getPath')->willReturn('/p');
+		$file->method('getMTime')->willReturn(0);
+		$file->method('getPermissions')->willReturn(31);
+		$folder->expects(self::once())
+			->method('newFile')
+			->with('cabin-3.loan.yaml', 'yaml')
+			->willReturn($file);
+		$this->scanner->method('getLedgersFolder')->willReturn($folder);
+
+		$this->writer->createLoan('alice', 'Cabin', 'yaml');
+	}
+
+	public function testCreateLoanFallsBackToGenericSlugForUnusableName(): void {
+		$folder = $this->createMock(Folder::class);
+		$folder->method('nodeExists')->willReturn(false);
+		$file = $this->createMock(File::class);
+		$file->method('getId')->willReturn(1);
+		$file->method('getPath')->willReturn('/p');
+		$file->method('getMTime')->willReturn(0);
+		$file->method('getPermissions')->willReturn(31);
+		$folder->expects(self::once())
+			->method('newFile')
+			->with('loan.loan.yaml', 'yaml')
+			->willReturn($file);
+		$this->scanner->method('getLedgersFolder')->willReturn($folder);
+
+		$this->writer->createLoan('alice', '!!!', 'yaml');
 	}
 }

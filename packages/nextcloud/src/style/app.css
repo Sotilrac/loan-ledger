@@ -13,8 +13,24 @@
   height: 100%;
 }
 
+/*
+ * Normalize Nextcloud's globals so our shared @ui styles render the same
+ * inside NC as they do in the standalone. NC sets:
+ *   - `:root { font-size: 15px }` (we want 16 — browser default)
+ *   - `:root { line-height: 1.5 }` (we want ~1.4)
+ *   - `body { color: var(--color-main-text); font-family: var(--font-face) }`
+ *
+ * Pinning `line-height` and font on `.ll-shell` cascades through the tree
+ * via inheritance and keeps typography density in line with standalone.
+ * `font-size` on a non-root element doesn't change `rem` resolution but
+ * does change `em` resolution and unset-size text, which is enough to
+ * unify most rendering.
+ */
 .ll-shell {
   font-family: var(--ll-font-sans, system-ui, sans-serif);
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ll-ink);
   display: flex;
   flex-direction: column;
   max-width: 1440px;

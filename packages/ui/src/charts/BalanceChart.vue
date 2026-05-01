@@ -604,8 +604,15 @@ svg {
   color: var(--ll-ink);
 }
 
+/*
+ * Nextcloud's `core/css/server.css` styles bare `dl/dt/dd` with 12px
+ * padding and forces `dt` to `display: inline-block; width: 130px`. Zero
+ * those out explicitly here — without this the tooltip rows show 12px of
+ * padding inside every row in NC. No-op in standalone.
+ */
 .chart-tooltip dl {
   margin: 0;
+  padding: 0;
   display: grid;
   gap: 0.25rem;
 }
@@ -617,13 +624,20 @@ svg {
 }
 
 .chart-tooltip dt {
+  display: block;
+  width: auto;
+  padding: 0;
+  text-align: start;
+  white-space: normal;
   font-size: 0.75rem;
   color: var(--ll-ink-muted);
   letter-spacing: 0.04em;
 }
 
 .chart-tooltip dd {
+  display: block;
   margin: 0;
+  padding: 0;
   font-size: 0.875rem;
   font-weight: 500;
   font-feature-settings:

@@ -30,6 +30,42 @@ class LoanController extends OCSController {
 		parent::__construct($appName, $request);
 	}
 
+	#[ApiRoute(verb: 'POST', url: '/api/v1/loans')]
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	public function create(): DataResponse {
+		$userId = $this->getUserId();
+		$name = $this->request->getParam('name');
+		$body = $this->request->getParam('content_yaml');
+		if (!is_string($name) || trim($name) === '') {
+			return new DataResponse(
+				['error' => 'invalid_body', 'message' => 'Expected non-empty string name'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
+		if (!is_string($body) || trim($body) === '') {
+			return new DataResponse(
+				['error' => 'invalid_body', 'message' => 'Expected non-empty string content_yaml'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
+
+		try {
+			$created = $this->writer->createLoan($userId, $name, $body);
+		} catch (LedgersFolderMissingException $e) {
+			return new DataResponse(
+				['error' => 'folder_missing', 'message' => $e->getMessage()],
+				Http::STATUS_NOT_FOUND,
+			);
+		} catch (NotPermittedException $e) {
+			return new DataResponse(
+				['error' => 'forbidden', 'message' => $e->getMessage()],
+				Http::STATUS_FORBIDDEN,
+			);
+		}
+		return new DataResponse($created, Http::STATUS_CREATED);
+	}
+
 	#[ApiRoute(verb: 'GET', url: '/api/v1/loans')]
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
