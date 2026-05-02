@@ -11,11 +11,30 @@ import {
   ScenariosPanel,
   useLoanStore,
 } from '@loan-ledger/ui';
-import { computed, ref, watchEffect } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue';
 import FilePicker from './components/FilePicker.vue';
 
 const store = useLoanStore();
 const importOpen = ref(false);
+const menuOpen = ref(false);
+const menuRoot = ref<HTMLElement | null>(null);
+
+function toggleMenu(): void {
+  menuOpen.value = !menuOpen.value;
+}
+
+function closeMenu(): void {
+  menuOpen.value = false;
+}
+
+function handleDocClick(event: MouseEvent): void {
+  if (!menuOpen.value) return;
+  const root = menuRoot.value;
+  if (root && !root.contains(event.target as Node)) closeMenu();
+}
+
+onMounted(() => document.addEventListener('click', handleDocClick));
+onBeforeUnmount(() => document.removeEventListener('click', handleDocClick));
 
 const currency = computed(() => store.activeLoan.property.currency);
 
@@ -75,62 +94,96 @@ async function onSave() {
             <a href="https://asmat.ca" target="_blank" rel="noopener noreferrer">Carlos Asmat</a>
           </span>
         </p>
-        <div class="controls">
+        <div ref="menuRoot" class="controls">
           <FilePicker />
-          <button
-            v-if="!store.isEditing"
-            class="secondary"
-            type="button"
-            @click="store.startEditing"
-          >
-            Edit
-          </button>
-          <button
-            v-if="!store.isEditing"
-            class="secondary import-btn"
-            type="button"
-            @click="importOpen = true"
-          >
-            Import payments
-          </button>
-          <template v-else>
+          <template v-if="store.isEditing">
             <button class="primary" type="button" @click="store.commitEditing">Done editing</button>
             <button class="tertiary" type="button" @click="store.cancelEditing">Cancel</button>
           </template>
-          <button
-            v-if="store.canWriteToFile && !store.isEditing"
-            class="primary"
-            type="button"
-            :disabled="store.saveState === 'saving'"
-            @click="onSave"
-          >
-            Save to file
-          </button>
-          <button
-            v-if="!store.isEditing"
-            class="secondary"
-            type="button"
-            @click="store.downloadYaml"
-          >
-            Save
-          </button>
-          <button
-            v-if="!store.isEditing"
-            class="secondary"
-            type="button"
-            title="Download the amortization table (scheduled + actuals) as CSV"
-            @click="store.downloadCsv"
-          >
-            Export CSV
-          </button>
-          <button
-            v-if="!store.isEditing"
-            class="tertiary demo-btn"
-            type="button"
-            @click="store.loadDemo"
-          >
-            Use demo data
-          </button>
+          <template v-else>
+            <button
+              type="button"
+              class="menu-toggle"
+              :aria-expanded="menuOpen"
+              aria-label="Open menu"
+              @click.stop="toggleMenu"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+                <path
+                  d="M3 5h14M3 10h14M3 15h14"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  fill="none"
+                />
+              </svg>
+            </button>
+            <div class="controls__menu" :class="{ 'is-open': menuOpen }">
+              <button
+                class="secondary"
+                type="button"
+                @click="
+                  store.startEditing();
+                  closeMenu();
+                "
+              >
+                Edit
+              </button>
+              <button
+                class="secondary"
+                type="button"
+                @click="
+                  importOpen = true;
+                  closeMenu();
+                "
+              >
+                Import payments
+              </button>
+              <button
+                v-if="store.canWriteToFile"
+                class="primary"
+                type="button"
+                :disabled="store.saveState === 'saving'"
+                @click="
+                  onSave();
+                  closeMenu();
+                "
+              >
+                Save to file
+              </button>
+              <button
+                class="secondary"
+                type="button"
+                @click="
+                  store.downloadYaml();
+                  closeMenu();
+                "
+              >
+                Save
+              </button>
+              <button
+                class="secondary"
+                type="button"
+                title="Download the amortization table (scheduled + actuals) as CSV"
+                @click="
+                  store.downloadCsv();
+                  closeMenu();
+                "
+              >
+                Export CSV
+              </button>
+              <button
+                class="tertiary"
+                type="button"
+                @click="
+                  store.loadDemo();
+                  closeMenu();
+                "
+              >
+                Use demo data
+              </button>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -153,12 +206,6 @@ async function onSave() {
               {{ link.label }}
             </a>
           </p>
-        </div>
-        <div v-if="!store.isEditing" class="mobile-actions">
-          <button class="secondary" type="button" @click="importOpen = true">
-            Import payments
-          </button>
-          <button class="tertiary" type="button" @click="store.loadDemo">Use demo data</button>
         </div>
       </div>
     </header>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { buildDemoLoan, serializeLoanYaml } from '@loan-ledger/core';
 import { useLoanStore } from '@loan-ledger/ui';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import LoanDetail from './views/LoanDetail.vue';
 import { useLoansStore } from './stores/loans.js';
 import { useSettingsStore } from './stores/settings.js';
@@ -12,6 +12,33 @@ const loan = useLoanStore();
 
 const importOpen = ref(false);
 const settingsOpen = ref(false);
+const menuOpen = ref(false);
+const menuRoot = ref<HTMLElement | null>(null);
+
+function toggleMenu(): void {
+  menuOpen.value = !menuOpen.value;
+}
+
+function closeMenu(): void {
+  menuOpen.value = false;
+}
+
+function handleDocClick(event: MouseEvent): void {
+  if (!menuOpen.value && !settingsOpen.value) return;
+  const root = menuRoot.value;
+  if (root && !root.contains(event.target as Node)) {
+    menuOpen.value = false;
+    settingsOpen.value = false;
+  }
+}
+
+function onOpenSettings(): void {
+  menuOpen.value = false;
+  settingsOpen.value = true;
+}
+
+onMounted(() => document.addEventListener('click', handleDocClick));
+onBeforeUnmount(() => document.removeEventListener('click', handleDocClick));
 const folderDrafts = ref<string[]>([...settings.folders]);
 const settingsError = ref<string>('');
 const newError = ref<string>('');
@@ -245,35 +272,9 @@ async function browseForOnboardPath(): Promise<void> {
             </option>
             <option value="__new__">+ New loan…</option>
           </select>
-
-          <button
-            v-if="loansStore.selectedFileId !== null"
-            type="button"
-            class="ll-btn"
-            @click="loan.startEditing"
-          >
-            Edit
-          </button>
-          <button
-            v-if="loansStore.selectedFileId !== null"
-            type="button"
-            class="ll-btn"
-            @click="importOpen = true"
-          >
-            Import payments
-          </button>
-          <button
-            v-if="loansStore.selectedFileId !== null"
-            type="button"
-            class="ll-btn"
-            title="Download the amortization table (scheduled + actuals) as CSV"
-            @click="loan.downloadCsv"
-          >
-            Export CSV
-          </button>
         </template>
 
-        <template v-else>
+        <template v-if="loan.isEditing">
           <button
             type="button"
             class="ll-btn ll-btn--primary"
@@ -285,15 +286,67 @@ async function browseForOnboardPath(): Promise<void> {
           <button type="button" class="ll-btn" @click="loan.cancelEditing">Cancel</button>
         </template>
 
-        <div class="ll-settings">
+        <div ref="menuRoot" class="ll-header__menu">
           <button
             type="button"
-            class="ll-btn"
-            :aria-expanded="settingsOpen"
-            @click="settingsOpen = !settingsOpen"
+            class="ll-btn ll-menu-toggle"
+            :aria-expanded="menuOpen"
+            aria-label="Open menu"
+            @click.stop="toggleMenu"
           >
-            Settings
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M3 5h14M3 10h14M3 15h14"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                fill="none"
+              />
+            </svg>
           </button>
+          <div class="ll-header__menu-items" :class="{ 'is-open': menuOpen }">
+            <template v-if="loansStore.selectedFileId !== null && !loan.isEditing">
+              <button
+                type="button"
+                class="ll-btn"
+                @click="
+                  loan.startEditing();
+                  closeMenu();
+                "
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                class="ll-btn"
+                @click="
+                  importOpen = true;
+                  closeMenu();
+                "
+              >
+                Import payments
+              </button>
+              <button
+                type="button"
+                class="ll-btn"
+                title="Download the amortization table (scheduled + actuals) as CSV"
+                @click="
+                  loan.downloadCsv();
+                  closeMenu();
+                "
+              >
+                Export CSV
+              </button>
+            </template>
+            <button
+              type="button"
+              class="ll-btn"
+              :aria-expanded="settingsOpen"
+              @click="onOpenSettings"
+            >
+              Settings
+            </button>
+          </div>
           <div v-if="settingsOpen" class="ll-settings__panel">
             <p class="label">Ledgers folders</p>
             <p class="caption">
@@ -434,6 +487,66 @@ async function browseForOnboardPath(): Promise<void> {
   flex-wrap: wrap;
 }
 
+/*
+ * The menu wrapper acts as the absolute-positioning anchor for both the
+ * settings panel and (on mobile) the collapsed action list. It always has a
+ * real box so `position: relative` actually applies; `display: contents` on
+ * the inner items list lets the buttons flow inline as siblings of the
+ * wrapper's flex parent on desktop.
+ */
+.ll-header__menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ll-header__menu-items {
+  display: contents;
+}
+
+/* Hamburger toggle: hidden on desktop, visible on narrow viewports. */
+.ll-menu-toggle {
+  display: none !important;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+}
+
+@media (width <= 48rem) {
+  .ll-menu-toggle {
+    display: inline-flex !important;
+  }
+
+  .ll-header__menu-items {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    z-index: 10;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 12rem;
+    padding: 0.5rem;
+    gap: 0.375rem;
+    background: var(--ll-paper-raised, #fff);
+    border: 1px solid var(--ll-ink-faint);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgb(var(--ll-shadow-rgb, 0 0 0) / 12%);
+  }
+
+  .ll-header__menu-items.is-open {
+    display: flex;
+  }
+
+  .ll-header__menu-items .ll-btn {
+    width: 100%;
+    text-align: left;
+  }
+}
+
 .ll-select {
   font: inherit;
   padding: 0.375rem 2.5rem 0.375rem 0.75rem;
@@ -453,10 +566,6 @@ async function browseForOnboardPath(): Promise<void> {
 .ll-select:hover,
 .ll-select:focus {
   border-color: var(--ll-accent);
-}
-
-.ll-settings {
-  position: relative;
 }
 
 .ll-settings__panel {
