@@ -262,6 +262,15 @@ async function browseForOnboardPath(): Promise<void> {
           >
             Import payments
           </button>
+          <button
+            v-if="loansStore.selectedFileId !== null"
+            type="button"
+            class="ll-btn"
+            title="Download the amortization table (scheduled + actuals) as CSV"
+            @click="loan.downloadCsv"
+          >
+            Export CSV
+          </button>
         </template>
 
         <template v-else>

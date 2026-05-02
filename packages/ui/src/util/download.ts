@@ -1,6 +1,10 @@
 /** Trigger a browser download for the given filename and text content. */
-export function downloadText(filename: string, text: string): void {
-  const blob = new Blob([text], { type: 'application/x-yaml' });
+export function downloadText(
+  filename: string,
+  text: string,
+  mimeType = 'application/x-yaml',
+): void {
+  const blob = new Blob([text], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

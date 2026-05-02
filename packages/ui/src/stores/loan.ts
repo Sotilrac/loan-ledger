@@ -17,6 +17,7 @@ import { defineStore } from 'pinia';
 import { computed, ref, shallowRef } from 'vue';
 import { DemoSource } from '../source/demoSource.js';
 import { downloadText } from '../util/download.js';
+import { loanComputationToCsv } from '../util/exportCsv.js';
 
 export const useLoanStore = defineStore('loan', () => {
   // --- Source + loan state --------------------------------------------------
@@ -274,12 +275,27 @@ export const useLoanStore = defineStore('loan', () => {
   function downloadYaml(): void {
     if (isEditing.value) commitEditing();
     const yaml = currentYaml.value;
-    const slug =
+    downloadText(`${slugForDownload()}.loan.yaml`, yaml);
+  }
+
+  /**
+   * Export the amortization ledger (scheduled + actuals) as a CSV download.
+   * Mirrors what's visible in the table: actual amounts when a payment
+   * exists, otherwise the scheduled row.
+   */
+  function downloadCsv(): void {
+    if (isEditing.value) commitEditing();
+    const csv = loanComputationToCsv(computation.value);
+    downloadText(`${slugForDownload()}.amortization.csv`, csv, 'text/csv');
+  }
+
+  function slugForDownload(): string {
+    return (
       activeLoan.value.property.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '') || 'loan';
-    downloadText(`${slug}.loan.yaml`, yaml);
+        .replace(/^-+|-+$/g, '') || 'loan'
+    );
   }
 
   return {
@@ -315,6 +331,7 @@ export const useLoanStore = defineStore('loan', () => {
     updateDraft,
     save,
     downloadYaml,
+    downloadCsv,
     setSelectedPeriod,
     toggleScenario,
     toggleEditingScenario,

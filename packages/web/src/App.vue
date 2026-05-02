@@ -116,6 +116,15 @@ async function onSave() {
           </button>
           <button
             v-if="!store.isEditing"
+            class="secondary"
+            type="button"
+            title="Download the amortization table (scheduled + actuals) as CSV"
+            @click="store.downloadCsv"
+          >
+            Export CSV
+          </button>
+          <button
+            v-if="!store.isEditing"
             class="tertiary demo-btn"
             type="button"
             @click="store.loadDemo"
