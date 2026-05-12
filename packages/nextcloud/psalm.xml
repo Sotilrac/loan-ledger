@@ -19,7 +19,4 @@
 	<extraFiles>
 		<directory name="vendor/nextcloud/ocp"/>
 	</extraFiles>
-	<stubs>
-		<file name="vendor/nextcloud/ocp/stub.phpstub"/>
-	</stubs>
 </psalm>
