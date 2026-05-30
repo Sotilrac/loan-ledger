@@ -24,3 +24,6 @@ pre-push:
 
     test:
       run: pnpm test
+
+    build:
+      run: pnpm build
