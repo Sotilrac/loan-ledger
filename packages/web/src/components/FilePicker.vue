@@ -45,14 +45,7 @@ async function onFileChosen(event: Event) {
     >
       Load loan
     </button>
-    <button
-      type="button"
-      class="secondary"
-      data-tooltip="Create a quick loan from rate, term, and principal, starting today. Handy for comparing alternatives."
-      @click="newLoanOpen = true"
-    >
-      New loan
-    </button>
+    <button type="button" class="secondary" @click="newLoanOpen = true">New loan</button>
     <input
       ref="fileInput"
       type="file"
