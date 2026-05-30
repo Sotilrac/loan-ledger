@@ -168,7 +168,7 @@ openssl req -new -key ~/.nextcloud/certificates/loanledger.key \
 
 **Step 2.** Submit the CSR by opening a PR against [`nextcloud/app-certificate-requests`](https://github.com/nextcloud/app-certificate-requests) (preferred, leaves an audit trail), or by emailing the CSR to [security@nextcloud.com](mailto:security@nextcloud.com).
 
-**Step 3.** They merge / reply with `loanledger.crt`. Save it next to the key.
+**Step 3.** They merge and publish the signed cert at `<appid>/<appid>.crt` in that repo. Save it next to the key (`~/.nextcloud/certificates/loanledger.crt`).
 
 ### Per release: build, validate, sign, submit
 
@@ -186,8 +186,8 @@ curl -X POST -H "Content-Type: application/json" \
   -u "<your-account>:<your-app-store-token>" \
   https://apps.nextcloud.com/api/v1/apps/releases \
   -d "$(jq -n \
-    --arg url 'https://gitlab.com/sotilrac/loan-ledger/-/releases/nc-v0.1.0/downloads/loanledger-0.1.0.tar.gz' \
-    --arg sig "$(cat dist/loanledger-0.1.0.tar.gz.sig)" \
+    --arg url 'https://gitlab.com/sotilrac/loan-ledger/-/releases/nc-v1.0.0/downloads/loanledger-1.0.0.tar.gz' \
+    --arg sig "$(cat dist/loanledger-1.0.0.tar.gz.sig)" \
     '{download: $url, signature: $sig, nightly: false}')"
 ```
 
