@@ -329,7 +329,7 @@ async function browseForOnboardPath(): Promise<void> {
               <button
                 type="button"
                 class="ll-btn"
-                title="Download the amortization table (scheduled + actuals) as CSV"
+                data-tooltip="Download the amortization table (scheduled + actuals) as CSV"
                 @click="
                   loan.downloadCsv();
                   closeMenu();

@@ -174,7 +174,7 @@ function closeEditor() {
       <p class="label">Amortization</p>
       <ul class="legend">
         <li
-          data-tooltip="The portion of each payment that goes toward reducing the loan balance — your equity."
+          data-tooltip="The portion of each payment that goes toward reducing the loan balance, your equity."
         >
           <span class="swatch principal" /> <span class="term">Principal</span>
         </li>

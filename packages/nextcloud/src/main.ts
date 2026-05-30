@@ -1,4 +1,4 @@
-import { setMappingsSource } from '@loan-ledger/ui';
+import { initTooltips, setMappingsSource } from '@loan-ledger/ui';
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 import App from './App.vue';
@@ -12,3 +12,5 @@ import './style/app.css';
 setMappingsSource(new OcsMappingsSource());
 
 createApp(App).use(createPinia()).mount('#loanledger-app');
+
+initTooltips();

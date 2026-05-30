@@ -1,4 +1,4 @@
-import { setMappingsSource } from '@loan-ledger/ui';
+import { initTooltips, setMappingsSource } from '@loan-ledger/ui';
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 import App from './App.vue';
@@ -12,3 +12,5 @@ setMappingsSource(new LocalStorageMappingsSource());
 const app = createApp(App);
 app.use(createPinia());
 app.mount('#app');
+
+initTooltips();

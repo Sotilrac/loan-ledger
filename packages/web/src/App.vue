@@ -164,7 +164,7 @@ async function onSave() {
               <button
                 class="secondary"
                 type="button"
-                title="Download the amortization table (scheduled + actuals) as CSV"
+                data-tooltip="Download the amortization table (scheduled + actuals) as CSV"
                 @click="
                   store.downloadCsv();
                   closeMenu();

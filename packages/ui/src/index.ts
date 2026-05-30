@@ -8,6 +8,7 @@ export { FallbackSource } from './source/fallbackSource.js';
 
 // Utilities
 export { downloadText } from './util/download.js';
+export { initTooltips } from './util/tooltip.js';
 export { loanComputationToCsv } from './util/exportCsv.js';
 export * as format from './format.js';
 
