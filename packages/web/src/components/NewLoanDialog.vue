@@ -75,10 +75,8 @@ watch(
     <form method="dialog" @submit.prevent="create">
       <header>
         <p class="eyebrow">New loan</p>
-        <h2>Start a loan from scratch</h2>
         <p class="caption">
-          The minimum to get going. The loan starts today; property value seeds from the principal.
-          Everything is editable afterwards, and nothing is saved until you export.
+          You can edit the property value, dates, escrow, and more once it's created.
         </p>
       </header>
 
@@ -157,20 +155,13 @@ form {
   min-width: 0;
 }
 
-header h2 {
-  font-family: var(--ll-font-serif);
-  font-size: 1.5625rem;
-  font-weight: 500;
-  margin: 0.25rem 0 0.5rem;
-}
-
 .eyebrow {
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ll-ink-muted);
-  margin: 0;
+  margin: 0 0 0.5rem;
 }
 
 .caption {
