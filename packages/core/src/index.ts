@@ -20,6 +20,7 @@ export {
 } from './engine/scenarioEngine.js';
 export { applyMutation, applyMutations } from './mutation/index.js';
 export { buildDemoLoan, DEMO_LOAN } from './demo.js';
+export { buildNewLoan, type NewLoanInput } from './newLoan.js';
 
 export {
   addMonths,
