@@ -75,9 +75,7 @@ watch(
     <form method="dialog" @submit.prevent="create">
       <header>
         <p class="eyebrow">New loan</p>
-        <p class="caption">
-          You can edit the property value, dates, escrow, and more once it's created.
-        </p>
+        <p class="caption">Edit the property value, dates, escrow, and more once it's created.</p>
       </header>
 
       <div class="grid">
