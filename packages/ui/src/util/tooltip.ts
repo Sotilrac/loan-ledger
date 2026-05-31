@@ -91,11 +91,32 @@ function show(trigger: HTMLElement): void {
   place(trigger, text);
 }
 
-/** Wire up global listeners that drive the shared tooltip. Safe to call repeatedly. */
-export function initTooltips(): void {
+export interface TooltipOptions {
+  /**
+   * Use the browser's built-in `title` tooltips instead of the themed
+   * floating element. We lazily mirror `data-tooltip` onto `title` on first
+   * hover/focus so every `[data-tooltip]` element gets a native tooltip with
+   * no per-component edits. Used by the Nextcloud target, which wants to look
+   * like native Nextcloud chrome.
+   */
+  native?: boolean;
+}
+
+/** Wire up global listeners that drive tooltips. Safe to call repeatedly. */
+export function initTooltips(opts: TooltipOptions = {}): void {
   if (typeof document === 'undefined') return;
   if ((globalThis as { __llTooltips?: boolean }).__llTooltips) return;
   (globalThis as { __llTooltips?: boolean }).__llTooltips = true;
+
+  if (opts.native) {
+    const mirror = (e: Event) => {
+      const trigger = (e.target as Element | null)?.closest<HTMLElement>('[data-tooltip]');
+      if (trigger && !trigger.title) trigger.title = trigger.getAttribute('data-tooltip') ?? '';
+    };
+    document.addEventListener('pointerover', mirror);
+    document.addEventListener('focusin', mirror);
+    return;
+  }
 
   document.addEventListener('pointerover', (e) => {
     const trigger = (e.target as Element | null)?.closest<HTMLElement>('[data-tooltip]');

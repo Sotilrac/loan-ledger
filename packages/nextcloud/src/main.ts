@@ -13,4 +13,4 @@ setMappingsSource(new OcsMappingsSource());
 
 createApp(App).use(createPinia()).mount('#loanledger-app');
 
-initTooltips();
+initTooltips({ native: true });
