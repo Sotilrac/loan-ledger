@@ -3,13 +3,11 @@ import { FallbackSource, useLoanStore } from '@loan-ledger/ui';
 import { ref } from 'vue';
 import { fsaSupported, pickLoanFile } from '../composables/useFileHandle.js';
 import { FsaSource } from '../source/fsaSource.js';
-import NewLoanDialog from './NewLoanDialog.vue';
 
 const store = useLoanStore();
 const fsaAvailable = fsaSupported();
 const fileInput = ref<HTMLInputElement | null>(null);
 const error = ref<string | null>(null);
-const newLoanOpen = ref(false);
 
 async function openViaFSA() {
   error.value = null;
@@ -45,7 +43,6 @@ async function onFileChosen(event: Event) {
     >
       Load loan
     </button>
-    <button type="button" class="secondary" @click="newLoanOpen = true">New loan</button>
     <input
       ref="fileInput"
       type="file"
@@ -54,15 +51,12 @@ async function onFileChosen(event: Event) {
       @change="onFileChosen"
     />
     <p v-if="error" class="error">{{ error }}</p>
-    <NewLoanDialog :open="newLoanOpen" @close="newLoanOpen = false" />
   </div>
 </template>
 
 <style scoped>
 .picker {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
+  display: contents;
 }
 
 .error {

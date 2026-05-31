@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { buildNewLoan, serializeLoanYaml } from '@loan-ledger/core';
-import { FallbackSource, useLoanStore } from '@loan-ledger/ui';
+import { buildDemoLoan, buildNewLoan, serializeLoanYaml } from '@loan-ledger/core';
 import { ref, watch } from 'vue';
 
-const props = defineProps<{ open: boolean }>();
-const emit = defineEmits<{ (e: 'close'): void }>();
+const props = defineProps<{ open: boolean; allowDemo?: boolean }>();
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'create', payload: { name: string; yaml: string }): void;
+}>();
 
-const store = useLoanStore();
 const dialogRef = ref<HTMLDialogElement | null>(null);
 
 const name = ref('');
@@ -23,16 +24,7 @@ function reset() {
   error.value = null;
 }
 
-function slugify(label: string): string {
-  const base = label
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return `${base || 'loan'}.loan.yaml`;
-}
-
-async function create() {
+function create() {
   error.value = null;
   if (!name.value.trim() || !principal.value || !termYears.value || ratePercent.value === null) {
     error.value = 'Fill in every field.';
@@ -44,13 +36,14 @@ async function create() {
     annualRatePercent: ratePercent.value,
     termMonths: Math.round(termYears.value * 12),
   });
-  const source = new FallbackSource(slugify(name.value), serializeLoanYaml(loan));
-  const ok = await store.attachSource(source);
-  if (!ok) {
-    error.value = 'Could not create the loan.';
-    return;
-  }
-  emit('close');
+  emit('create', { name: name.value.trim(), yaml: serializeLoanYaml(loan) });
+}
+
+function useDemo() {
+  emit('create', {
+    name: name.value.trim() || 'Demo loan',
+    yaml: serializeLoanYaml(buildDemoLoan()),
+  });
 }
 
 function cancel() {
@@ -122,8 +115,16 @@ watch(
       <p v-if="error" class="error">{{ error }}</p>
 
       <footer>
-        <button type="button" class="tertiary" @click="cancel">Cancel</button>
-        <button type="submit" class="primary">Create loan</button>
+        <button
+          v-if="allowDemo"
+          type="button"
+          class="nl-btn nl-btn--ghost nl-btn--demo"
+          @click="useDemo"
+        >
+          Populate with demo data
+        </button>
+        <button type="button" class="nl-btn nl-btn--ghost" @click="cancel">Cancel</button>
+        <button type="submit" class="nl-btn nl-btn--primary">Create loan</button>
       </footer>
     </form>
   </dialog>
@@ -211,5 +212,35 @@ footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+}
+
+/* Push the demo shortcut to the far left, away from Cancel / Create. */
+.nl-btn--demo {
+  margin-right: auto;
+}
+
+/* Self-contained buttons so the dialog looks right in either host app. */
+.nl-btn {
+  font-family: var(--ll-font-sans);
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.nl-btn--ghost {
+  background: transparent;
+  border-color: var(--ll-ink-faint);
+  color: var(--ll-ink);
+}
+
+.nl-btn--primary {
+  background: var(--ll-accent);
+  color: var(--ll-paper);
+}
+
+.nl-btn:hover {
+  filter: brightness(0.96);
 }
 </style>

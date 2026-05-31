@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { buildDemoLoan, serializeLoanYaml } from '@loan-ledger/core';
-import { useLoanStore } from '@loan-ledger/ui';
+import { NewLoanDialog, useLoanStore } from '@loan-ledger/ui';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import LoanDetail from './views/LoanDetail.vue';
 import { useLoansStore } from './stores/loans.js';
@@ -43,6 +42,8 @@ const folderDrafts = ref<string[]>([...settings.folders]);
 const settingsError = ref<string>('');
 const newError = ref<string>('');
 const folderCreateError = ref<string>('');
+const newLoanOpen = ref(false);
+const newLoanFolder = ref<string | null>(null);
 
 const hasLoans = computed(() => loansStore.entries.length > 0);
 const folderMissing = computed(() => loansStore.error?.kind === 'folder_missing');
@@ -91,59 +92,25 @@ async function onSelect(event: Event): Promise<void> {
   loansStore.select(value ? Number(value) : null);
 }
 
-/**
- * NC's prompt dialog. Falls back to `window.prompt` if NC's chrome isn't
- * loaded (e.g. running outside Nextcloud during tests).
- */
-function ncPrompt(text: string, title: string, defaultValue = ''): Promise<string | null> {
-  const w = window as unknown as {
-    OC?: {
-      dialogs?: {
-        prompt?: (
-          text: string,
-          title: string,
-          callback: (ok: boolean, value: string) => void,
-          modal: boolean,
-          name: string,
-          password: boolean,
-        ) => void;
-      };
-    };
-  };
-  const dialogs = w.OC?.dialogs;
-  if (!dialogs?.prompt) {
-    const fallback = window.prompt(text, defaultValue);
-    return Promise.resolve(fallback);
-  }
-  return new Promise((resolve) => {
-    dialogs.prompt!(
-      text,
-      title,
-      (ok, value) => resolve(ok ? value : null),
-      true,
-      defaultValue,
-      false,
-    );
-  });
-}
-
 async function onNew(): Promise<void> {
   newError.value = '';
 
   // When multiple folders are configured, let the user pick which one the
   // new loan lands in. Single-folder users skip this step.
-  let folder: string | null = null;
+  newLoanFolder.value = null;
   if (settings.folders.length > 1) {
-    folder = await pickFolder(settings.folders[0] ?? '/', 'Choose where to put the new loan');
+    const folder = await pickFolder(settings.folders[0] ?? '/', 'Choose where to put the new loan');
     if (!folder) return;
+    newLoanFolder.value = folder;
   }
 
-  const name = await ncPrompt('Name for the new loan?', 'New loan', 'New loan');
-  if (!name || !name.trim()) return;
+  newLoanOpen.value = true;
+}
 
-  const yaml = serializeLoanYaml(buildDemoLoan());
+async function onCreateNewLoan(payload: { name: string; yaml: string }): Promise<void> {
   try {
-    await loansStore.create(name.trim(), yaml, folder);
+    await loansStore.create(payload.name, payload.yaml, newLoanFolder.value);
+    newLoanOpen.value = false;
   } catch (err) {
     newError.value = err instanceof Error ? err.message : String(err);
   }
@@ -454,9 +421,7 @@ async function browseForOnboardPath(): Promise<void> {
           yet.
         </p>
         <p v-if="newError" class="ll-error" style="margin: 0.5rem 0 0">{{ newError }}</p>
-        <button type="button" class="ll-btn ll-btn--primary" @click="onNew">
-          New loan with demo data
-        </button>
+        <button type="button" class="ll-btn ll-btn--primary" @click="onNew">New loan</button>
       </div>
 
       <LoanDetail
@@ -466,6 +431,13 @@ async function browseForOnboardPath(): Promise<void> {
         @close-import="importOpen = false"
       />
     </main>
+
+    <NewLoanDialog
+      :open="newLoanOpen"
+      allow-demo
+      @close="newLoanOpen = false"
+      @create="onCreateNewLoan"
+    />
   </div>
 </template>
 

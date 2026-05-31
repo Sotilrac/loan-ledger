@@ -4,10 +4,12 @@ import {
   BalanceChart,
   CsvImportDialog,
   EquityGauge,
+  FallbackSource,
   format as fmt,
   formatMonthFullYear,
   formatMonthLabel,
   LoanEditForm,
+  NewLoanDialog,
   ScenariosPanel,
   useLoanStore,
 } from '@loan-ledger/ui';
@@ -16,6 +18,7 @@ import FilePicker from './components/FilePicker.vue';
 
 const store = useLoanStore();
 const importOpen = ref(false);
+const newLoanOpen = ref(false);
 const menuOpen = ref(false);
 const menuRoot = ref<HTMLElement | null>(null);
 
@@ -81,6 +84,20 @@ watchEffect(() => {
 async function onSave() {
   await store.save();
 }
+
+function slugifyName(label: string): string {
+  const base = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return `${base || 'loan'}.loan.yaml`;
+}
+
+async function onCreateNewLoan(payload: { name: string; yaml: string }) {
+  const ok = await store.attachSource(new FallbackSource(slugifyName(payload.name), payload.yaml));
+  if (ok) newLoanOpen.value = false;
+}
 </script>
 
 <template>
@@ -119,6 +136,16 @@ async function onSave() {
               </svg>
             </button>
             <div class="controls__menu" :class="{ 'is-open': menuOpen }">
+              <button
+                class="secondary"
+                type="button"
+                @click="
+                  newLoanOpen = true;
+                  closeMenu();
+                "
+              >
+                New loan
+              </button>
               <button
                 class="secondary"
                 type="button"
@@ -353,6 +380,7 @@ async function onSave() {
     </template>
 
     <CsvImportDialog :open="importOpen" @close="importOpen = false" />
+    <NewLoanDialog :open="newLoanOpen" @close="newLoanOpen = false" @create="onCreateNewLoan" />
 
     <small class="attribution" aria-label="Attribution">
       {{ lastUpdatedYear }}

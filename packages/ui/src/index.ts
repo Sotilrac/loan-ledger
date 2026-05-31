@@ -16,6 +16,7 @@ export * as format from './format.js';
 export { default as AmortizationTable } from './components/AmortizationTable.vue';
 export { default as CsvImportDialog } from './components/CsvImportDialog.vue';
 export { default as LoanEditForm } from './components/LoanEditForm.vue';
+export { default as NewLoanDialog } from './components/NewLoanDialog.vue';
 export { default as PaymentEditorRow } from './components/PaymentEditorRow.vue';
 export { default as ScenarioEditor } from './components/ScenarioEditor.vue';
 export { default as ScenariosPanel } from './components/ScenariosPanel.vue';
