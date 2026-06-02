@@ -183,7 +183,9 @@ release:nextcloud:
     # only exists after the script, so publish to the generic Package Registry
     # (anonymously downloadable on this public project) and submit that URL.
     - PKG_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/loanledger/${APP_VERSION}/${TAR_NAME}"
-    - curl -fsS --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$OUT_DIR/$TAR_NAME" "$PKG_URL"
+    - |
+      curl -fsS --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        --upload-file "$OUT_DIR/$TAR_NAME" "$PKG_URL"
     - |
       curl -fsS -X POST -H 'Content-Type: application/json' \
         -H "Authorization: Token ${NC_APPSTORE_TOKEN}" \
