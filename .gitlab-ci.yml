@@ -178,25 +178,20 @@ release:nextcloud:
     - tar -czf "$OUT_DIR/$TAR_NAME" -C "$OUT_DIR" loanledger
     - SIG=$(openssl dgst -sha512 -sign "$NC_SIGNING_KEY" "$OUT_DIR/$TAR_NAME" | base64 -w0)
     - echo "$SIG" > "$OUT_DIR/$TAR_NAME.sig"
-    # Submit to the App Store. Asset URL points at the GitLab release we
-    # create alongside this job (see `release:` block below).
-    - DOWNLOAD="https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}/-/releases/${CI_COMMIT_TAG}/downloads/${TAR_NAME}"
+    # The App Store fetches `download` to verify the signature, so the tarball
+    # must be publicly reachable *before* the POST. The GitLab `release:` below
+    # only exists after the script, so publish to the generic Package Registry
+    # (anonymously downloadable on this public project) and submit that URL.
+    - PKG_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/loanledger/${APP_VERSION}/${TAR_NAME}"
+    - curl -fsS --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$OUT_DIR/$TAR_NAME" "$PKG_URL"
     - |
       curl -fsS -X POST -H 'Content-Type: application/json' \
         -H "Authorization: Token ${NC_APPSTORE_TOKEN}" \
         https://apps.nextcloud.com/api/v1/apps/releases \
-        -d "$(jq -n --arg url "$DOWNLOAD" --arg sig "$SIG" '{download: $url, signature: $sig, nightly: false}')"
+        -d "$(jq -n --arg url "$PKG_URL" --arg sig "$SIG" '{download: $url, signature: $sig, nightly: false}')"
   artifacts:
     name: 'loanledger-$CI_COMMIT_TAG'
     paths:
       - $OUT_DIR/loanledger-*.tar.gz
       - $OUT_DIR/loanledger-*.tar.gz.sig
     expire_in: never
-  release:
-    name: 'Nextcloud app $CI_COMMIT_TAG'
-    description: 'Loan Ledger Nextcloud app release $CI_COMMIT_TAG'
-    tag_name: '$CI_COMMIT_TAG'
-    assets:
-      links:
-        - name: 'loanledger-$CI_COMMIT_TAG.tar.gz'
-          url: 'https://$CI_SERVER_HOST/$CI_PROJECT_PATH/-/jobs/$CI_JOB_ID/artifacts/raw/$OUT_DIR/loanledger-$APP_VERSION.tar.gz'
