@@ -141,10 +141,11 @@ deploy:cloudflare:
 
 # Build a signed Nextcloud App Store tarball on `nc-vX.Y.Z` tags, attach it
 # to the GitLab release as an asset, then submit the release to the App
-# Store API. Requires three masked CI variables:
-#   - NC_SIGNING_KEY      (file): the private key paired with your registered cert
-#   - NC_APPSTORE_USER    (variable): your App Store account name
-#   - NC_APPSTORE_TOKEN   (variable): your App Store API token
+# Store API. Requires two CI variables:
+#   - NC_SIGNING_KEY    (file): the private key paired with your registered cert
+#   - NC_APPSTORE_TOKEN (variable, masked): API token from
+#       https://apps.nextcloud.com/account/token. Token auth is required for
+#       accounts that sign in via GitHub (no password to use for basic auth).
 release:nextcloud:
   stage: deploy
   rules:
@@ -179,7 +180,7 @@ release:nextcloud:
     - DOWNLOAD="https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}/-/releases/${CI_COMMIT_TAG}/downloads/${TAR_NAME}"
     - |
       curl -fsS -X POST -H 'Content-Type: application/json' \
-        -u "${NC_APPSTORE_USER}:${NC_APPSTORE_TOKEN}" \
+        -H "Authorization: Token ${NC_APPSTORE_TOKEN}" \
         https://apps.nextcloud.com/api/v1/apps/releases \
         -d "$(jq -n --arg url "$DOWNLOAD" --arg sig "$SIG" '{download: $url, signature: $sig, nightly: false}')"
   artifacts:
