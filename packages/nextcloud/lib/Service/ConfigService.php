@@ -70,7 +70,7 @@ class ConfigService {
 	}
 
 	/**
-	 * @param list<string> $folders
+	 * @param array<array-key, mixed> $folders
 	 * @return list<string>
 	 */
 	private function cleanFolderList(array $folders): array {

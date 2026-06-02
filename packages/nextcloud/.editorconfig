@@ -1,4 +1,4 @@
-; Nextcloud convention: tabs for PHP (PSR-12) and XML config files.
-[*.{php,xml}]
+; Nextcloud convention: tabs for PHP (PSR-12), psalm stubs, and XML config files.
+[*.{php,phpstub,xml}]
 indent_style = tab
 indent_size = 4

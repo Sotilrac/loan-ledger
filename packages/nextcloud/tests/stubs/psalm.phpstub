@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+// Psalm stubs for private `OC\` symbols that public OCP interfaces reference
+// (e.g. `OCP\Files\IRootFolder` extends `OC\Hooks\Emitter`) but that
+// `nextcloud/ocp` doesn't ship. These are declarations for static analysis
+// only; the real implementations live in `nextcloud/server` at runtime.
+//
+// Unlike `oc-private.php` (loaded by PHPUnit at runtime, with `*_exists`
+// guards), a psalm stub must declare symbols unconditionally.
+
+namespace OC\Hooks {
+	interface Emitter {
+	}
+}
+
+namespace OC\User {
+	class NoUserException extends \Exception {
+	}
+}

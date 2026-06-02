@@ -8,9 +8,15 @@
 	findUnusedBaselineEntry="true"
 	findUnusedCode="false"
 >
+	<!--
+	Psalm covers the production code under `lib`. Test files aren't analyzed:
+	they lean on PHPUnit mocks (`createMock(...)->method(...)`) that psalm
+	can't type without the psalm-phpunit plugin, and on conditional `OC\`
+	symbol stubs it can't parse statically. `composer test` (PHPUnit) is the
+	gate for test correctness.
+	-->
 	<projectFiles>
 		<directory name="lib"/>
-		<directory name="tests"/>
 		<ignoreFiles>
 			<directory name="vendor"/>
 			<directory name="vendor-bin"/>
@@ -19,4 +25,9 @@
 	<extraFiles>
 		<directory name="vendor/nextcloud/ocp"/>
 	</extraFiles>
+	<stubs>
+		<!-- Private `OC\` symbols referenced by public OCP interfaces but not
+		shipped by `nextcloud/ocp` (e.g. IRootFolder -> OC\Hooks\Emitter). -->
+		<file name="tests/stubs/psalm.phpstub"/>
+	</stubs>
 </psalm>
