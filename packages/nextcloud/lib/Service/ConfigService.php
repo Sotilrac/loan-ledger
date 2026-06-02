@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace OCA\LoanLedger\Service;
 
 use OCA\LoanLedger\AppInfo\Application;
-use OCP\Config\IUserConfig;
+use OCP\IConfig;
 
 /**
  * Per-user configuration. The user keeps `.loan.yaml` files in one or
@@ -13,12 +13,17 @@ use OCP\Config\IUserConfig;
  * the "primary" — it's where new loans land by default and where the
  * shared `.mappings.yaml` lives. Defaults to `[/Ledgers]` on first use.
  *
- * For backwards compatibility we still read the legacy single `folder`
+ * The folder list is stored as a JSON string under the `folders` key
+ * (`IConfig` only handles scalar values, so we encode the array). For
+ * backwards compatibility we still read the legacy single `folder`
  * value and migrate it to the array on first read.
+ *
+ * Uses `OCP\IConfig` (not the typed `OCP\Config\IUserConfig`, which is
+ * only available since Nextcloud 32) so the app runs on Nextcloud 31.
  */
 class ConfigService {
 	public function __construct(
-		private readonly IUserConfig $config,
+		private readonly IConfig $config,
 	) {
 	}
 
@@ -26,14 +31,15 @@ class ConfigService {
 	 * @return list<string>
 	 */
 	public function getLedgersFolders(string $userId): array {
-		$folders = $this->config->getValueArray(
+		$raw = $this->config->getUserValue(
 			$userId,
 			Application::APP_ID,
 			'folders',
-			[],
+			'',
 		);
-		if (count($folders) === 0) {
-			$legacy = $this->config->getValueString(
+		$folders = $raw !== '' ? json_decode($raw, true) : null;
+		if (!is_array($folders) || count($folders) === 0) {
+			$legacy = $this->config->getUserValue(
 				$userId,
 				Application::APP_ID,
 				'folder',
@@ -61,11 +67,11 @@ class ConfigService {
 		if (count($normalized) === 0) {
 			$normalized = [Application::DEFAULT_FOLDER];
 		}
-		$this->config->setValueArray(
+		$this->config->setUserValue(
 			$userId,
 			Application::APP_ID,
 			'folders',
-			$normalized,
+			json_encode($normalized, JSON_THROW_ON_ERROR),
 		);
 	}
 
