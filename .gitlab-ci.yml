@@ -160,7 +160,10 @@ release:nextcloud:
     - corepack enable
     - corepack prepare pnpm@10.33.1 --activate
     - pnpm install --frozen-lockfile
-    - cd packages/nextcloud && composer install --no-progress --no-dev && cd -
+    # --no-scripts: the post-install-cmd runs the bamarni bin plugin, a dev-only
+    # dep that isn't present under --no-dev. --working-dir avoids cd so later
+    # steps keep resolving paths from the repo root.
+    - composer install --no-progress --no-dev --no-scripts --working-dir=packages/nextcloud
     - pnpm --filter @loan-ledger/nextcloud build
   script:
     # Validate info.xml against the live App Store schema before packaging.
