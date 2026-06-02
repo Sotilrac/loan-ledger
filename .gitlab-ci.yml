@@ -163,7 +163,6 @@ nextcloud-package:
     - if: $CI_COMMIT_TAG =~ /^nc-v\d+\.\d+\.\d+$/
   image: node:24-bookworm
   variables:
-    APP_VERSION: '${CI_COMMIT_TAG#nc-v}'
     OUT_DIR: dist
   before_script:
     - apt-get update -q
@@ -177,6 +176,9 @@ nextcloud-package:
     - composer install --no-progress --no-dev --no-scripts --working-dir=packages/nextcloud
     - pnpm --filter @loan-ledger/nextcloud build
   script:
+    # GitLab's variables: block can't do `${VAR#prefix}` stripping, so derive
+    # the version in the shell.
+    - APP_VERSION="${CI_COMMIT_TAG#nc-v}"
     # Validate info.xml against the live App Store schema before packaging.
     - curl -s https://apps.nextcloud.com/schema/apps/info.xsd -o /tmp/info.xsd
     - xmllint --schema /tmp/info.xsd packages/nextcloud/appinfo/info.xml --noout
@@ -202,21 +204,27 @@ release:nextcloud:
     - if: $CI_COMMIT_TAG =~ /^nc-v\d+\.\d+\.\d+$/
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   variables:
-    APP_VERSION: '${CI_COMMIT_TAG#nc-v}'
     OUT_DIR: dist
   before_script:
     - apk add --no-cache curl jq
   script:
+    - APP_VERSION="${CI_COMMIT_TAG#nc-v}"
     - TAR_NAME="loanledger-${APP_VERSION}.tar.gz"
     - SIG=$(cat "$OUT_DIR/$TAR_NAME.sig")
-    # Public, no-auth URL for the package job's artifact. Resolves to the file
-    # once that job has succeeded (it has, since we `need` it).
-    - DOWNLOAD="${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/${OUT_DIR}/${TAR_NAME}?job=nextcloud-package"
-    # GitLab Release for humans, linking the same file.
+    # Public, no-auth URL for the package job's artifact (resolves now that the
+    # job we `need` has succeeded). It carries a `?job=` query, so it can't be
+    # the App Store download URL directly (that check requires a .tar.gz suffix).
+    - ARTIFACT_URL="${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/${OUT_DIR}/${TAR_NAME}?job=nextcloud-package"
+    # Recreate the GitLab Release idempotently (re-tagging reruns this job).
+    - 'curl -sS --request DELETE --header "JOB-TOKEN: $CI_JOB_TOKEN" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases/$CI_COMMIT_TAG" || true'
+    # `filepath` mints a clean permalink (…/downloads/loanledger-X.tar.gz, no
+    # query, ends in .tar.gz) that redirects to ARTIFACT_URL — exactly what the
+    # App Store wants to fetch.
     - |
       release-cli create --name "Nextcloud app $CI_COMMIT_TAG" --tag-name "$CI_COMMIT_TAG" \
         --description "Loan Ledger Nextcloud app release $CI_COMMIT_TAG" \
-        --assets-link "{\"name\":\"${TAR_NAME}\",\"url\":\"${DOWNLOAD}\",\"link_type\":\"package\"}"
+        --assets-link "{\"name\":\"${TAR_NAME}\",\"url\":\"${ARTIFACT_URL}\",\"filepath\":\"/${TAR_NAME}\",\"link_type\":\"package\"}"
+    - DOWNLOAD="${CI_PROJECT_URL}/-/releases/${CI_COMMIT_TAG}/downloads/${TAR_NAME}"
     # Submit to the App Store; print the response body so failures are legible.
     - |
       CODE=$(curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
