@@ -1,6 +1,6 @@
 .PHONY: help install dev build test lint format typecheck install-hooks clean deploy \
 	nc-install nc-build nc-test nc-lint nc-format nc-clean nc-shell nc-dev nc-dev-down \
-	nc-dev-enable nc-dev-logs nc-validate nc-package nc-dev31
+	nc-dev-enable nc-dev-logs nc-validate nc-package nc-dev31 nc-dev31-down
 
 NC_DIR := packages/nextcloud
 PHP_IMAGE ?= php:8.2-cli
@@ -40,6 +40,7 @@ help:
 	@echo "  make nc-clean       Remove PHP build caches and vendor dirs"
 	@echo "  make nc-dev         Bring up a local Nextcloud at http://localhost:8080"
 	@echo "  make nc-dev31       Bring up Nextcloud 31 (min supported) at http://localhost:8081"
+	@echo "  make nc-dev31-down  Tear down the Nextcloud 31 dev box and discard its data"
 	@echo "  make nc-dev-enable  Install (if needed) + enable the loanledger app in the running NC"
 	@echo "  make nc-dev-logs    Tail logs from the dev Nextcloud"
 	@echo "  make nc-dev-down    Tear down the dev Nextcloud and discard its data"
@@ -112,6 +113,12 @@ nc-dev31:
 	$(MAKE) nc-dev NC_IMAGE=nextcloud:31-apache NC_PORT=8081 \
 		NC_PROJECT=loanledger-nc31 NC_CONTAINER=loanledger-nc31
 	@echo "Then run: make nc-dev-enable NC_PORT=8081 NC_PROJECT=loanledger-nc31 NC_CONTAINER=loanledger-nc31"
+	@echo "Tear down with: make nc-dev31-down"
+
+# Tear down the NC 31 box. `nc-dev-down` defaults to the :8080 project, so the
+# isolated nc31 project needs its own teardown target.
+nc-dev31-down:
+	$(MAKE) nc-dev-down NC_PORT=8081 NC_PROJECT=loanledger-nc31 NC_CONTAINER=loanledger-nc31
 
 # Idempotent: waits for the core files to land, then ensures Nextcloud is
 # installed and the app enabled. Docker pre-creates the bind-mounted
