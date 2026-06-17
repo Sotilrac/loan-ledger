@@ -12,7 +12,7 @@ them in git, and share them with collaborators using normal Nextcloud sharing.
 All loan math runs entirely in your browser; the server only reads and writes
 the underlying files.
 	]]></description>
-	<version>1.0.1</version>
+	<version>1.0.2</version>
 	<licence>MPL-2.0</licence>
 	<author homepage="https://asmat.ca">Carlos Asmat</author>
 	<namespace>LoanLedger</namespace>
