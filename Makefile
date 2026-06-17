@@ -1,9 +1,19 @@
 .PHONY: help install dev build test lint format typecheck install-hooks clean deploy \
 	nc-install nc-build nc-test nc-lint nc-format nc-clean nc-shell nc-dev nc-dev-down \
-	nc-dev-enable nc-dev-logs nc-validate nc-package
+	nc-dev-enable nc-dev-logs nc-validate nc-package nc-dev31
 
 NC_DIR := packages/nextcloud
 PHP_IMAGE ?= php:8.2-cli
+
+# Dev Nextcloud version/port are overridable so the lower end of the
+# supported range can be tested alongside the default. `make nc-dev31`
+# wires these to a clean, isolated NC 31 instance on :8081.
+NC_IMAGE ?= nextcloud:33-apache
+NC_PORT ?= 8080
+NC_PROJECT ?= loanledger-nc-dev
+NC_CONTAINER ?= loanledger-nc-dev
+NC_COMPOSE = NC_IMAGE=$(NC_IMAGE) NC_PORT=$(NC_PORT) NC_CONTAINER=$(NC_CONTAINER) \
+	docker compose -p $(NC_PROJECT) -f $(NC_DIR)/dev/docker-compose.yml
 
 help:
 	@echo "Loan Ledger — developer commands"
@@ -29,7 +39,8 @@ help:
 	@echo "  make nc-shell       Open a PHP 8.2 shell with $(NC_DIR) mounted"
 	@echo "  make nc-clean       Remove PHP build caches and vendor dirs"
 	@echo "  make nc-dev         Bring up a local Nextcloud at http://localhost:8080"
-	@echo "  make nc-dev-enable  Enable the loanledger app inside the running NC"
+	@echo "  make nc-dev31       Bring up Nextcloud 31 (min supported) at http://localhost:8081"
+	@echo "  make nc-dev-enable  Install (if needed) + enable the loanledger app in the running NC"
 	@echo "  make nc-dev-logs    Tail logs from the dev Nextcloud"
 	@echo "  make nc-dev-down    Tear down the dev Nextcloud and discard its data"
 	@echo "  make nc-validate    Validate appinfo/info.xml against the App Store schema"
@@ -91,29 +102,48 @@ nc-clean:
 		$(NC_DIR)/.phpunit.cache $(NC_DIR)/.psalm.cache $(NC_DIR)/.php-cs-fixer.cache
 
 nc-dev: nc-build
-	docker compose -f $(NC_DIR)/dev/docker-compose.yml up -d
-	@echo "Nextcloud booting at http://localhost:8080 (admin / admin)."
+	$(NC_COMPOSE) up -d
+	@echo "Nextcloud ($(NC_IMAGE)) booting at http://localhost:$(NC_PORT) (admin / admin)."
 	@echo "First boot takes ~30s. Then run: make nc-dev-enable"
 
+# Bring up the lowest supported Nextcloud (31) in its own isolated project
+# and volume on :8081, so it doesn't collide with the default :8080 dev box.
+nc-dev31:
+	$(MAKE) nc-dev NC_IMAGE=nextcloud:31-apache NC_PORT=8081 \
+		NC_PROJECT=loanledger-nc31 NC_CONTAINER=loanledger-nc31
+	@echo "Then run: make nc-dev-enable NC_PORT=8081 NC_PROJECT=loanledger-nc31 NC_CONTAINER=loanledger-nc31"
+
+# Idempotent: waits for the core files to land, then ensures Nextcloud is
+# installed and the app enabled. Docker pre-creates the bind-mounted
+# `custom_apps` parent as root, which leaves no writable apps path and makes
+# the image's unattended install abort with "Cannot write into apps
+# directory"; we chown it and drive the install ourselves to sidestep that.
 nc-dev-enable:
-	@echo "Waiting for Nextcloud to finish installing (up to 3 minutes)..."
+	@echo "Waiting for Nextcloud core files to copy (up to 3 minutes)..."
 	@for i in $$(seq 1 36); do \
-		if docker compose -f $(NC_DIR)/dev/docker-compose.yml exec --user www-data -T nextcloud \
-			php occ status 2>/dev/null | grep -q "installed: true"; then \
-			echo "✓ Nextcloud is up."; \
+		if $(NC_COMPOSE) exec -T nextcloud test -f /var/www/html/occ 2>/dev/null; then \
 			break; \
 		fi; \
 		printf "."; \
 		sleep 5; \
 	done; echo
-	docker compose -f $(NC_DIR)/dev/docker-compose.yml exec --user www-data nextcloud \
-		php occ app:enable loanledger
+	$(NC_COMPOSE) exec -u root -T nextcloud chown www-data:www-data /var/www/html/custom_apps
+	@if $(NC_COMPOSE) exec --user www-data -T nextcloud php occ status 2>/dev/null | grep -q "installed: true"; then \
+		echo "✓ Already installed."; \
+	else \
+		echo "Installing Nextcloud..."; \
+		$(NC_COMPOSE) exec --user www-data -T nextcloud php occ maintenance:install \
+			--database=sqlite --database-name=nextcloud --admin-user=admin --admin-pass=admin; \
+	fi
+	$(NC_COMPOSE) exec --user www-data -T nextcloud php occ config:system:set trusted_domains 1 --value=localhost:$(NC_PORT)
+	$(NC_COMPOSE) exec --user www-data -T nextcloud php occ app:enable loanledger
+	@echo "✓ Loan Ledger enabled at http://localhost:$(NC_PORT)/apps/loanledger (admin / admin)."
 
 nc-dev-logs:
-	docker compose -f $(NC_DIR)/dev/docker-compose.yml logs -f
+	$(NC_COMPOSE) logs -f
 
 nc-dev-down:
-	docker compose -f $(NC_DIR)/dev/docker-compose.yml down -v
+	$(NC_COMPOSE) down -v
 
 # Validate appinfo/info.xml against the live App Store schema. Runs in a
 # minimal debian container so the host doesn't need libxml2-utils.
