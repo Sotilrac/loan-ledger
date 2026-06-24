@@ -45,12 +45,16 @@ function getRequestToken(): string {
 }
 
 function getBaseUrl(): string {
-  const w = window as unknown as { OC?: { generateUrl?: (path: string) => string } };
-  // `OC.generateUrl` honors the Nextcloud subpath install (e.g. `/nextcloud`).
-  // Fall back to the relative form for unit tests / dev.
-  return (
-    w.OC?.generateUrl?.(`/ocs/v2.php/apps/${APP_ID}/api/v1`) ?? `/ocs/v2.php/apps/${APP_ID}/api/v1`
-  );
+  const w = window as unknown as { OC?: { getRootPath?: () => string } };
+  // OCS endpoints live at `<webroot>/ocs/v2.php/...` and must NOT be routed
+  // through the front controller. `OC.generateUrl` injects `/index.php` when
+  // pretty URLs are off (`OC.config.modRewriteWorking === false`), producing
+  // `/index.php/ocs/v2.php/...`, which 404s. Build from the webroot instead so
+  // it works regardless of the instance's rewrite config and still honors
+  // subpath installs (e.g. `/nextcloud`). `getRootPath()` returns the webroot
+  // with no trailing slash (`''` for a root install).
+  const root = w.OC?.getRootPath?.() ?? '';
+  return `${root}/ocs/v2.php/apps/${APP_ID}/api/v1`;
 }
 
 async function request<T>(
